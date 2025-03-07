@@ -1,3 +1,15 @@
+# Inspired by:
+
+- https://crontab.guru/
+- https://kurtextrem.de/cache
+
+# Depenencies
+
+- [SolidStart](https://docs.solidjs.com/solid-start)
+- [shadcn-solid](https://shadcn-solid.com/)
+- [Tanstack Form](https://tanstack.com/form/latest)
+- [Tailwind v4](https://tailwindcss.com/blog/tailwindcss-v4)
+
 # SolidStart
 
 Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);

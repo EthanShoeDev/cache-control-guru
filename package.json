@@ -1,20 +1,41 @@
 {
-  "name": "example-with-tailwindcss",
+  "name": "cache-control-guru",
+  "description": "A quick and simple website to help generate and explain cache-control headers.",
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "fmt": "SORT_IMPORTS=true prettier --cache --write .",
+    "fmt:check": "SORT_IMPORTS=true prettier --check .",
+    "lint:fix": "eslint --fix --report-unused-disable-directives --max-warnings 0 .",
+    "lint:check": "pnpm run fmt:check && eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint": "pnpm run fmt && pnpm run lint:fix"
   },
   "dependencies": {
+    "@kobalte/core": "^0.13.9",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.1.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "solid-js": "^1.9.5",
+    "tailwind-merge": "^3.0.2",
+    "tailwindcss-animate": "^1.0.7",
     "vinxi": "^0.5.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
     "@tailwindcss/vite": "^4.0.7",
-    "tailwindcss": "^4.0.7"
+    "@types/node": "^22.13.9",
+    "@typescript-eslint/parser": "^8.26.0",
+    "eslint": "^9.21.0",
+    "eslint-plugin-solid": "^0.14.5",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "tailwindcss": "^4.0.7",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.0"
   },
   "engines": {
     "node": ">=22"

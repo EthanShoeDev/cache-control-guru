@@ -76,3 +76,37 @@
     @apply bg-background text-foreground;
   }
 } */
+
+@layer components {
+  .prose {
+    @apply text-foreground;
+  }
+  
+  .prose h2 {
+    @apply text-xl font-semibold mt-6 mb-3;
+  }
+  
+  .prose h3 {
+    @apply text-lg font-medium mt-5 mb-2;
+  }
+  
+  .prose p {
+    @apply my-3 leading-relaxed;
+  }
+  
+  .prose ul {
+    @apply list-disc pl-6 my-3 space-y-1;
+  }
+  
+  .prose li {
+    @apply leading-relaxed;
+  }
+  
+  .prose code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .prose a {
+    @apply text-primary hover:underline;
+  }
+}

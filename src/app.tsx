@@ -8,10 +8,10 @@ export default function App() {
   return (
     <Router
       root={(props) => (
-        <>
+        <div class="min-h-screen bg-background text-foreground">
           <Nav />
           <Suspense>{props.children}</Suspense>
-        </>
+        </div>
       )}
     >
       <FileRoutes />

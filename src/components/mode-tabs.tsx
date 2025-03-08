@@ -1,5 +1,11 @@
-import { createSignal, type Component, type JSX } from 'solid-js';
+import {
+  Tabs,
+  TabsIndicator,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { type Component } from 'solid-js';
 
 type Mode = 'explain' | 'generate';
 
@@ -11,27 +17,16 @@ interface ModeTabsProps {
 
 export const ModeTabs: Component<ModeTabsProps> = (props) => {
   return (
-    <div class={cn('flex rounded-lg bg-muted p-1', props.class)}>
-      <button
-        type="button"
-        class={cn(
-          'inline-flex flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50', 
-          props.mode === 'explain' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-        )}
-        onClick={() => props.onChange('explain')}
-      >
-        Explain
-      </button>
-      <button
-        type="button"
-        class={cn(
-          'inline-flex flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-          props.mode === 'generate' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-        )}
-        onClick={() => props.onChange('generate')}
-      >
-        Generate
-      </button>
-    </div>
+    <Tabs
+      value={props.mode}
+      onChange={(value) => props.onChange(value as Mode)}
+      class={cn(props.class)}
+    >
+      <TabsList class="w-full rounded-lg p-1">
+        <TabsTrigger value="explain">Explain</TabsTrigger>
+        <TabsTrigger value="generate">Generate</TabsTrigger>
+        <TabsIndicator />
+      </TabsList>
+    </Tabs>
   );
 };

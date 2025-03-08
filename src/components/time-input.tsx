@@ -1,5 +1,9 @@
+import {
+  Checkbox,
+  CheckboxControl,
+  CheckboxLabel,
+} from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import { createSignal, Show, type Component } from 'solid-js';
 
 type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
@@ -34,20 +38,20 @@ export const TimeInput: Component<TimeInputProps> = (props) => {
   return (
     <div class={cn('relative space-y-2', props.class)}>
       <div class="flex items-center space-x-2">
-        <Checkbox 
-          checked={props.enabled} 
+        <Checkbox
+          checked={props.enabled}
           onChange={props.onEnabledChange}
-          id={`${props.label.toLowerCase().replace(/\s+/g, '-')}-enabled`}
           disabled={props.disabled}
-        />
-        <label 
-          for={`${props.label.toLowerCase().replace(/\s+/g, '-')}-enabled`}
-          class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
-          {props.label}
-        </label>
+          <div class="flex items-center space-x-2">
+            <CheckboxControl />
+            <CheckboxLabel class="text-sm leading-none font-medium">
+              {props.label}
+            </CheckboxLabel>
+          </div>
+        </Checkbox>
       </div>
-      
+
       <Show when={props.enabled}>
         <div class="flex items-center gap-2">
           <input
@@ -55,12 +59,12 @@ export const TimeInput: Component<TimeInputProps> = (props) => {
             min="0"
             step="1"
             class={cn(
-              'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors',
+              'border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors',
               'file:border-0 file:bg-transparent file:text-sm file:font-medium',
               'placeholder:text-muted-foreground',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'focus-visible:ring-ring focus-visible:ring-1 focus-visible:outline-none',
               'disabled:cursor-not-allowed disabled:opacity-50',
-              focused() && 'ring-1 ring-ring',
+              focused() && 'ring-ring ring-1',
             )}
             value={props.value}
             onInput={handleValueChange}
@@ -68,11 +72,11 @@ export const TimeInput: Component<TimeInputProps> = (props) => {
             onBlur={() => setFocused(false)}
             disabled={props.disabled}
           />
-          
+
           <select
             value={props.unit}
             onChange={handleUnitChange}
-            class="inline-flex h-9 min-w-[100px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring inline-flex h-9 min-w-[100px] items-center justify-between rounded-md border px-3 py-2 text-sm shadow-sm focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={props.disabled}
           >
             <option value="seconds">seconds</option>
@@ -82,7 +86,7 @@ export const TimeInput: Component<TimeInputProps> = (props) => {
           </select>
         </div>
         <Show when={props.description}>
-          <p class="text-sm text-muted-foreground">{props.description}</p>
+          <p class="text-muted-foreground text-sm">{props.description}</p>
         </Show>
       </Show>
     </div>

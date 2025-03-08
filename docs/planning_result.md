@@ -12,16 +12,18 @@ The Cache-Control Guru web app aims to help users understand and generate HTTP C
 ### Explain Mode
 
 In Explain mode, users can paste a cache-control header (e.g., "max-age=3600, no-cache") into a text area. Upon clicking a parse button, the app will:
+
 - Break down the header into individual directives.
 - Provide detailed explanations for each, such as "max-age=3600 means the response can be cached for 1 hour" and "no-cache requires revalidation with the server before using the cached version."
 
 ### Generate Mode
 
 In Generate mode, users interact with a form built using Tanstack Forms, featuring fields for common directives:
+
 - Max-age with unit selection (seconds, minutes, hours, days).
 - Checkboxes for no-cache, no-store, must-revalidate, and others.
 - Radio buttons for public vs. private caching.
-After filling out the form and clicking Generate, the app creates the header string (e.g., "public, max-age=3600, no-cache") and displays it, with the explain component below showing what each part means.
+  After filling out the form and clicking Generate, the app creates the header string (e.g., "public, max-age=3600, no-cache") and displays it, with the explain component below showing what each part means.
 
 ### Technical Setup
 
@@ -38,6 +40,7 @@ The Cache-Control Guru web application is designed to assist users in understand
 ### Background and Dependencies
 
 The project, named "cache-control-guru," leverages the following key dependencies:
+
 - **SolidStart**: A framework for building SolidJS applications with server-side rendering, providing a solid foundation for the web app.
 - **shadcn-solid**: A UI component library, offering pre-built components like buttons and forms for a polished interface.
 - **Tanstack Form**: Used for form handling in Generate mode, ensuring robust state management and validation.
@@ -48,12 +51,14 @@ The directory structure includes essential files like `README.md`, `app.config.t
 ### User Interface and Modes
 
 The main page will feature:
+
 - A header with the title "Cache-Control Guru" and a tagline, such as "Understand and generate cache-control headers easily."
 - A mode selector, implemented as tabs or buttons, to switch between Explain and Generate modes.
 
 #### Explain Mode
 
 In Explain mode, users can input a Cache-Control header string (e.g., "max-age=3600, no-cache") into a text area, followed by a parse button. The app will:
+
 - Parse the string by splitting it by commas, trimming spaces, and identifying directives with or without values (e.g., "max-age=3600" vs. "no-cache").
 - Display explanations for each directive, using a dictionary mapping. For instance:
   - "max-age=3600": "Sets the maximum age of the response to 3600 seconds (1 hour), meaning it can be cached for up to 1 hour before revalidation is required."
@@ -65,17 +70,18 @@ The parser must handle edge cases, such as invalid values (e.g., "max-age=abc") 
 
 In Generate mode, the top section features a form built with Tanstack Forms, organized into sections for clarity:
 
-| **Section**        | **Fields**                                                                 |
-|--------------------|---------------------------------------------------------------------------|
-| General Caching    | - Public/Private (radio buttons, mutually exclusive)<br>- No-Store (checkbox)<br>- No-Cache (checkbox)<br>- Must-Revalidate (checkbox)<br>- Proxy-Revalidate (checkbox) |
-| Expiration         | - Max-Age: Number input with unit selector (seconds, minutes, hours, days)<br>- S-Maxage: Similar, optional for shared caches |
-| Other Directives   | - No-Transform (checkbox, prevents proxy modifications)<br>- Immutable (checkbox, indicates response body won't change) |
+| **Section**      | **Fields**                                                                                                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| General Caching  | - Public/Private (radio buttons, mutually exclusive)<br>- No-Store (checkbox)<br>- No-Cache (checkbox)<br>- Must-Revalidate (checkbox)<br>- Proxy-Revalidate (checkbox) |
+| Expiration       | - Max-Age: Number input with unit selector (seconds, minutes, hours, days)<br>- S-Maxage: Similar, optional for shared caches                                           |
+| Other Directives | - No-Transform (checkbox, prevents proxy modifications)<br>- Immutable (checkbox, indicates response body won't change)                                                 |
 
 Users fill out the form, and upon clicking Generate, the app combines selected directives into a single header string (e.g., "public, max-age=3600, no-cache"). The generated string is displayed, and the explain component below parses and explains it, ensuring users understand the implications.
 
 ### Cache-Control Specification Adherence
 
 The design follows the Cache-Control specification, as outlined at [MDN Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control), covering response directives (public, private, no-cache, no-store, etc.) and request directives (max-age, min-fresh, etc.). Key considerations include:
+
 - Ensuring accurate parsing of directives, handling both flag directives (e.g., no-cache) and those with values (e.g., max-age=3600).
 - Providing explanations that account for interactions, such as no-cache overriding max-age for revalidation requirements.
 - Supporting advanced directives like immutable for static resources, though noting its HTTP/2+ introduction for broader compatibility.
@@ -83,6 +89,7 @@ The design follows the Cache-Control specification, as outlined at [MDN Cache-Co
 ### Future Enhancements
 
 While not part of the initial version, the user expressed interest in an interactive graphic simulating caching behavior. This could include:
+
 - A step-by-step diagram showing first and subsequent requests, illustrating cache hits/misses based on the header.
 - Options to simulate CDN involvement, showing how intermediate caches affect the flow.
 - Controls for variables like CDN presence, enhancing user understanding of real-world scenarios.

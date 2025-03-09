@@ -1,6 +1,11 @@
 import { Card } from '@/components/ui/card';
+import { createFileRoute } from '@tanstack/solid-router';
 
-export default function About() {
+export const Route = createFileRoute('/about')({
+  component: RouteComponent,
+});
+
+function RouteComponent() {
   return (
     <main class="container mx-auto max-w-3xl px-4 py-8">
       <div class="space-y-8">
@@ -97,14 +102,25 @@ export default function About() {
             <ul>
               <li>
                 <a
-                  href="https://docs.solidjs.com/solid-start"
+                  href="https://docs.solidjs.com/"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-primary hover:underline"
                 >
-                  SolidStart
+                  SolidJS
                 </a>{' '}
-                - SolidJS framework
+                - Reactive JavaScript library
+              </li>
+              <li>
+                <a
+                  href="https://tanstack.com/router/latest"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-primary hover:underline"
+                >
+                  TanStack Router
+                </a>{' '}
+                - Type-safe routing
               </li>
               <li>
                 <a
@@ -119,14 +135,14 @@ export default function About() {
               </li>
               <li>
                 <a
-                  href="https://tanstack.com/form/latest"
+                  href="https://kobalte.dev/"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-primary hover:underline"
                 >
-                  TanStack Form
+                  Kobalte
                 </a>{' '}
-                - Form handling
+                - Accessible UI components
               </li>
               <li>
                 <a
@@ -140,6 +156,11 @@ export default function About() {
                 - Styling
               </li>
             </ul>
+
+            <h2>License</h2>
+            <p>
+              This project is open source and available under the MIT License.
+            </p>
           </div>
         </Card>
       </div>

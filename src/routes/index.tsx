@@ -5,19 +5,47 @@ import { ModeTabs } from '@/components/mode-tabs';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { enhanceExplanation, parseHeader } from '@/lib/cache-control';
-import { createSignal, For, Show } from 'solid-js';
+import { createFileRoute } from '@tanstack/solid-router';
+import { fallback, zodValidator } from '@tanstack/zod-adapter';
+import { Accessor, For, Show } from 'solid-js';
+import { z } from 'zod';
 
-export default function Home() {
-  const [mode, setMode] = createSignal<'explain' | 'generate'>('explain');
-  const [headerValue, setHeaderValue] = createSignal('');
-  const [generatedHeader, setGeneratedHeader] = createSignal('');
+const pageSearchParamSchema = z.object({
+  mode: fallback(z.enum(['explain', 'generate']), 'explain'),
+  header: fallback(z.string(), ''),
+});
 
-  const handleExplain = (value: string) => {
-    setHeaderValue(value);
+type PageSearchParams = z.infer<typeof pageSearchParamSchema>;
+
+export const Route = createFileRoute('/')({
+  component: RouteComponent,
+  validateSearch: zodValidator(pageSearchParamSchema),
+});
+
+function RouteComponent() {
+  const searchParams =
+    Route.useSearch() as unknown as Accessor<PageSearchParams>;
+
+  const mode = () => searchParams().mode;
+  const header = () => searchParams().header;
+
+  const navigate = Route.useNavigate();
+  const setMode = (value: 'explain' | 'generate') => {
+    void navigate({
+      search: {
+        mode: value,
+        header: header(),
+      },
+    });
   };
-
-  const handleGenerate = (value: string) => {
-    setGeneratedHeader(value);
+  
+  const setHeader = (value: string) => {
+    void navigate({
+      search: {
+        mode: mode(),
+        header: value,
+      },
+    });
   };
 
   return (
@@ -39,13 +67,10 @@ export default function Home() {
               onChange={(value) => setMode(value as 'explain' | 'generate')}
             >
               <TabsContent value="explain">
-                <ExplainInput
-                  headerValue={headerValue()}
-                  onExplain={handleExplain}
-                />
+                <ExplainInput headerValue={header()} onExplain={setHeader} />
               </TabsContent>
               <TabsContent value="generate">
-                <GenerateForm onGenerate={handleGenerate} />
+                <GenerateForm onGenerate={setHeader} />
               </TabsContent>
             </Tabs>
           </div>
@@ -55,7 +80,7 @@ export default function Home() {
               <TabsContent value="explain">
                 <div class="space-y-6">
                   <Show
-                    when={headerValue()}
+                    when={header()}
                     fallback={
                       <p class="text-muted-foreground">
                         Enter a Cache-Control header to see an explanation.
@@ -65,7 +90,7 @@ export default function Home() {
                     <h2 class="text-xl font-semibold">Header Explanation</h2>
 
                     <div class="space-y-4">
-                      <For each={parseHeader(headerValue())}>
+                      <For each={parseHeader(header())}>
                         {(directive) => (
                           <Card class="p-4">
                             <h4 class="text-md flex items-center gap-1.5 font-medium">
@@ -94,7 +119,7 @@ export default function Home() {
                 </div>
               </TabsContent>
               <TabsContent value="generate">
-                <HeaderDisplay headerValue={generatedHeader()} />
+                <HeaderDisplay headerValue={header()} />
               </TabsContent>
             </Tabs>
           </div>

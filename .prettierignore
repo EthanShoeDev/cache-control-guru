@@ -1,0 +1,9 @@
+dist/**
+**/*.gen.*
+node_modules/**
+docs/examples/**
+.git/**
+.github/**
+.vscode/**
+.vinxi/**
+.output/**

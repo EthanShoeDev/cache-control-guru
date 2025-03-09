@@ -173,7 +173,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                 </label>
                 <p class="text-muted-foreground ml-6 text-xs">
                   Response can be stored by any cache, including browsers and
-                  CDNs.
+                  CDNs. Explicitly indicates that the response may be cached by
+                  any cache, even if it would normally be non-cacheable or
+                  cacheable only within a private context.
                 </p>
 
                 <label class="flex items-center space-x-2">
@@ -192,7 +194,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                 </label>
                 <p class="text-muted-foreground ml-6 text-xs">
                   Response is intended for a single user and must not be stored
-                  by shared caches.
+                  by shared caches. Allows browsers to cache the response but
+                  prevents CDNs, proxies, and other intermediate caches from
+                  storing it.
                 </p>
 
                 <label class="flex items-center space-x-2">
@@ -210,7 +214,10 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                   </span>
                 </label>
                 <p class="text-muted-foreground ml-6 text-xs">
-                  Don't specify public or private explicitly.
+                  Don't specify public or private explicitly. Uses the default
+                  caching behavior based on other directives. Without
+                  public/private, responses to authenticated requests are
+                  typically treated as private.
                 </p>
               </div>
             </div>
@@ -231,7 +238,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Response must not be stored in any cache. Used for sensitive
-                data.
+                data. This is the most strict directive that prevents all
+                caching - both by browsers and intermediate proxies/CDNs. This
+                overrides any other caching directives.
               </p>
             </div>
 
@@ -252,7 +261,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Cache must revalidate with the origin server before using the
-                cached copy.
+                cached copy. The response can still be stored by caches, but
+                must be validated with the origin server before each reuse, even
+                if the response is fresh according to max-age or expires.
               </p>
             </div>
           </Card>
@@ -279,7 +290,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Cache must verify stale responses with the origin server before
-                using them.
+                using them. Once a response becomes stale, it must be
+                revalidated before being served. Prevents serving of stale
+                responses when disconnected or during network errors.
               </p>
             </div>
 
@@ -300,7 +313,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Similar to must-revalidate but only applies to shared caches
-                like CDNs.
+                like CDNs. Requires shared/public caches to verify stale
+                responses with the origin, but allows private/browser caches to
+                serve stale responses when disconnected.
               </p>
             </div>
 
@@ -321,7 +336,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Indicates the response body will not change over time (for
-                HTTP/2+).
+                HTTP/2+). Tells browsers the resource will never change, so they
+                should never check for updates, even when the user refreshes the
+                page. Useful for versioned static assets.
               </p>
             </div>
           </Card>
@@ -339,7 +356,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               onValueChange={setMaxAgeValue}
               onUnitChange={setMaxAgeUnit}
               onEnabledChange={setMaxAgeEnabled}
-              description="Maximum time the response can be used before revalidation."
+              description="Maximum time (in seconds) the response can be used before becoming stale. Applies to both browser and shared caches. After this time, the cache must revalidate."
               disabled={noStore()}
             />
 
@@ -354,7 +371,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     onValueChange={setSMaxAgeValue}
                     onUnitChange={setSMaxAgeUnit}
                     onEnabledChange={setSMaxAgeEnabled}
-                    description="Like max-age but only for shared caches (CDNs, proxies)."
+                    description="Like max-age but only applies to shared caches (CDNs, proxies). Overrides max-age for shared caches. Useful for different browser vs. CDN caching strategies."
                     disabled={noStore() || cacheability() === 'private'}
                   />
                 </div>
@@ -389,7 +406,10 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Allows serving stale content while revalidating in the
-                background.
+                background. Improves performance by returning cached content
+                immediately while asynchronously checking if it's still current.
+                The value indicates how long stale content may be served while
+                revalidation occurs.
               </p>
               {staleWhileRevalidate() && (
                 <div class="mt-2 ml-6 flex items-center gap-2">
@@ -444,7 +464,10 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Allows using stale content when the origin server is
-                unavailable.
+                unavailable. Provides fallback when the server returns an error
+                or is unreachable. The value indicates how long stale content
+                may be served when errors occur. Improves reliability during
+                outages.
               </p>
               {staleIfError() && (
                 <div class="mt-2 ml-6 flex items-center gap-2">
@@ -506,7 +529,10 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </div>
               <p class="text-muted-foreground ml-6 text-xs">
                 Prevents caches from modifying the response content (like image
-                compression).
+                compression). Ensures content integrity by disabling proxy
+                optimizations that might alter the response body, such as image
+                compression or text minification. Important for resources where
+                exact bytes matter.
               </p>
             </div>
           </Card>

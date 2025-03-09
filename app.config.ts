@@ -9,6 +9,10 @@ const __dirname = dirname(__filename);
 
 export default defineConfig({
   vite: {
+    build: {
+      sourcemap: true,
+      minify: false,
+    },
     plugins: [
       TanStackRouterVite({ target: 'solid', autoCodeSplitting: true }),
       tailwindcss(),

@@ -68,19 +68,19 @@ export const directives: Record<
   },
   immutable: {
     description:
-      'Indicates the response body will not change over time, so clients should not revalidate even upon refresh (for HTTP/2+).',
+      'Indicates the response body will not change over time, so clients should not revalidate even upon refresh (for HTTP/2+). Support: Chrome, Firefox, Edge support it; Safari has inconsistent support.',
     category: 'validation',
     type: 'response',
   },
   'stale-while-revalidate': {
     description:
-      'Allows serving stale content while revalidating in the background.',
+      'Allows serving stale content while revalidating in the background. This improves performance by returning cached content immediately while asynchronously checking if it\'s still current. Support varies across CDNs: Cloudflare requires Enterprise plan with Cache Rules, AWS CloudFront needs Lambda@Edge customization, Fastly and Akamai fully support it. Chrome, Firefox, and Edge browsers support it; Safari has limited support.',
     category: 'validation',
     type: 'response',
   },
   'stale-if-error': {
     description:
-      'Allows serving stale content if the origin server is unavailable.',
+      'Allows serving stale content if the origin server is unavailable. This provides a fallback during server outages to maintain user experience. Support varies across CDNs: Cloudflare requires Enterprise plan, AWS CloudFront has no native support, Fastly and Akamai support it. Browser support is limited (mainly Chrome).',
     category: 'validation',
     type: 'response',
   },

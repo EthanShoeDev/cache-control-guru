@@ -106,104 +106,111 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
   // No-transform state
   const [noTransform, setNoTransform] = createSignal(false);
 
-  // Boolean to track if we're currently updating from header input
-  const [updatingFromHeader, setUpdatingFromHeader] = createSignal(false);
+  // Track last parsed header to avoid redundant parsing
+  const [lastParsedHeader, setLastParsedHeader] = createSignal('');
 
   // Effect to update form state based on header input
   createEffect(() => {
     const headerValue = props.headerValue;
+
+    // Skip processing if the header value hasn't changed
+    if (headerValue === lastParsedHeader()) return;
+
+    // Update our tracking of the last parsed header
+    setLastParsedHeader(headerValue);
+
+    // If header is empty, reset to default state but don't emit changes
     if (!headerValue) {
-      // If header is empty, reset to default state but don't emit changes
       resetForm(false);
       return;
     }
 
-    // Don't process if we're already updating from the form itself
-    if (updatingFromHeader()) return;
+    // Parse the header into directives
+    const parsedDirectives = parseHeader(headerValue);
 
-    setUpdatingFromHeader(true);
+    // Reset form first to clear any previous state
+    resetForm(false);
 
-    try {
-      const directives = parseHeader(headerValue);
+    // Update cache type
+    if (parsedDirectives.some((d) => d.name === 'no-store')) {
+      setCacheType('no-store');
+    } else if (parsedDirectives.some((d) => d.name === 'private')) {
+      setCacheType('private');
+    } else if (parsedDirectives.some((d) => d.name === 'public')) {
+      setCacheType('public');
+    } else {
+      setCacheType('public'); // Default to public if not specified
+    }
 
-      // Reset form first to clear any previous state
-      resetForm(false);
+    // Update fresh behavior
+    if (parsedDirectives.some((d) => d.name === 'no-cache')) {
+      setFreshBehavior('no-cache');
+    } else {
+      setFreshBehavior('default');
+    }
 
-      // Update cache type
-      if (directives.some((d) => d.name === 'no-store')) {
-        setCacheType('no-store');
-      } else if (directives.some((d) => d.name === 'private')) {
-        setCacheType('private');
-      } else if (directives.some((d) => d.name === 'public')) {
-        setCacheType('public');
-      } else {
-        setCacheType('public'); // Default to public if not specified
+    // Update validation options
+    setMustRevalidate(
+      parsedDirectives.some((d) => d.name === 'must-revalidate'),
+    );
+    setProxyRevalidate(
+      parsedDirectives.some((d) => d.name === 'proxy-revalidate'),
+    );
+    setImmutable(parsedDirectives.some((d) => d.name === 'immutable'));
+    setNoTransform(parsedDirectives.some((d) => d.name === 'no-transform'));
+
+    // Update max-age
+    const maxAgeDirective = parsedDirectives.find((d) => d.name === 'max-age');
+    if (maxAgeDirective && maxAgeDirective.value) {
+      const seconds = parseInt(maxAgeDirective.value, 10);
+      if (!isNaN(seconds)) {
+        const { value, unit } = parseSeconds(seconds);
+        setMaxAgeEnabled(true);
+        setMaxAgeValue(value);
+        setMaxAgeUnit(unit);
       }
+    }
 
-      // Update fresh behavior
-      if (directives.some((d) => d.name === 'no-cache')) {
-        setFreshBehavior('no-cache');
-      } else {
-        setFreshBehavior('default');
+    // Update s-maxage
+    const sMaxAgeDirective = parsedDirectives.find(
+      (d) => d.name === 's-maxage',
+    );
+    if (sMaxAgeDirective && sMaxAgeDirective.value) {
+      const seconds = parseInt(sMaxAgeDirective.value, 10);
+      if (!isNaN(seconds)) {
+        const { value, unit } = parseSeconds(seconds);
+        setSMaxAgeEnabled(true);
+        setSMaxAgeValue(value);
+        setSMaxAgeUnit(unit);
       }
+    }
 
-      // Update validation options
-      setMustRevalidate(directives.some((d) => d.name === 'must-revalidate'));
-      setProxyRevalidate(directives.some((d) => d.name === 'proxy-revalidate'));
-      setImmutable(directives.some((d) => d.name === 'immutable'));
-      setNoTransform(directives.some((d) => d.name === 'no-transform'));
-
-      // Update max-age
-      const maxAgeDirective = directives.find((d) => d.name === 'max-age');
-      if (maxAgeDirective && maxAgeDirective.value) {
-        const seconds = parseInt(maxAgeDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          setMaxAgeEnabled(true);
-          setMaxAgeValue(value);
-          setMaxAgeUnit(unit);
-        }
+    // Update stale-while-revalidate
+    const swrDirective = parsedDirectives.find(
+      (d) => d.name === 'stale-while-revalidate',
+    );
+    if (swrDirective && swrDirective.value) {
+      const seconds = parseInt(swrDirective.value, 10);
+      if (!isNaN(seconds)) {
+        const { value, unit } = parseSeconds(seconds);
+        setStaleWhileRevalidateEnabled(true);
+        setStaleWhileRevalidateValue(value);
+        setStaleWhileRevalidateUnit(unit);
       }
+    }
 
-      // Update s-maxage
-      const sMaxAgeDirective = directives.find((d) => d.name === 's-maxage');
-      if (sMaxAgeDirective && sMaxAgeDirective.value) {
-        const seconds = parseInt(sMaxAgeDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          setSMaxAgeEnabled(true);
-          setSMaxAgeValue(value);
-          setSMaxAgeUnit(unit);
-        }
+    // Update stale-if-error
+    const sieDirective = parsedDirectives.find(
+      (d) => d.name === 'stale-if-error',
+    );
+    if (sieDirective && sieDirective.value) {
+      const seconds = parseInt(sieDirective.value, 10);
+      if (!isNaN(seconds)) {
+        const { value, unit } = parseSeconds(seconds);
+        setStaleIfErrorEnabled(true);
+        setStaleIfErrorValue(value);
+        setStaleIfErrorUnit(unit);
       }
-
-      // Update stale-while-revalidate
-      const swrDirective = directives.find(
-        (d) => d.name === 'stale-while-revalidate',
-      );
-      if (swrDirective && swrDirective.value) {
-        const seconds = parseInt(swrDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          setStaleWhileRevalidateEnabled(true);
-          setStaleWhileRevalidateValue(value);
-          setStaleWhileRevalidateUnit(unit);
-        }
-      }
-
-      // Update stale-if-error
-      const sieDirective = directives.find((d) => d.name === 'stale-if-error');
-      if (sieDirective && sieDirective.value) {
-        const seconds = parseInt(sieDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          setStaleIfErrorEnabled(true);
-          setStaleIfErrorValue(value);
-          setStaleIfErrorUnit(unit);
-        }
-      }
-    } finally {
-      setUpdatingFromHeader(false);
     }
   });
 
@@ -246,9 +253,6 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
   // Effect to handle mutual exclusions and interactions
   createEffect(() => {
-    // Skip if we're currently updating from header
-    if (updatingFromHeader()) return;
-
     // If no-store is selected, disable other caching options
     if (isNoStore()) {
       setMaxAgeEnabled(false);
@@ -273,35 +277,40 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
   // Function to reset form to default state
   const resetForm = (emitChanges = true) => {
+    // Cache type and behavior
     setCacheType('public');
     setFreshBehavior('default');
+
+    // Validation options
+    setMustRevalidate(false);
+    setProxyRevalidate(false);
+    setImmutable(false);
+    setNoTransform(false);
+
+    // Time-based directives
     setMaxAgeEnabled(false);
     setMaxAgeValue(3600);
     setMaxAgeUnit('seconds');
     setSMaxAgeEnabled(false);
     setSMaxAgeValue(3600);
     setSMaxAgeUnit('seconds');
-    setMustRevalidate(false);
-    setProxyRevalidate(false);
-    setImmutable(false);
+
+    // Extensions
     setStaleWhileRevalidateEnabled(false);
     setStaleWhileRevalidateValue(60);
     setStaleWhileRevalidateUnit('seconds');
     setStaleIfErrorEnabled(false);
     setStaleIfErrorValue(300);
     setStaleIfErrorUnit('seconds');
-    setNoTransform(false);
 
+    // Generate and emit the header if requested
     if (emitChanges) {
       generateHeader();
     }
   };
 
-  // Function to generate the Cache-Control header
+  // Function to generate the Cache-Control header based on form state
   const generateHeader = () => {
-    // Skip if we're updating from header
-    if (updatingFromHeader()) return;
-
     const directives = [];
 
     // Cache Type directives
@@ -352,8 +361,17 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
     // Sort directives alphabetically for readability
     directives.sort();
 
+    // Create the final header value
     const headerValue = directives.join(', ');
-    props.onGenerate(headerValue);
+
+    // Only update if the header value actually changed
+    if (headerValue !== lastParsedHeader()) {
+      // Update tracking to avoid circular processing
+      setLastParsedHeader(headerValue);
+
+      // Notify parent of new value
+      props.onGenerate(headerValue);
+    }
   };
 
   return (

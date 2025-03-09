@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { enhanceExplanation, parseHeader } from '@/lib/cache-control';
 import { createFileRoute } from '@tanstack/solid-router';
 import { fallback, zodValidator } from '@tanstack/zod-adapter';
-import { Accessor, For, Show } from 'solid-js';
+import { Accessor, For, Show, createEffect, createSignal } from 'solid-js';
 import { z } from 'zod';
 
 // We're removing the mode parameter and only keeping the header parameter
@@ -22,16 +22,42 @@ export const Route = createFileRoute('/')({
 function RouteComponent() {
   const searchParams =
     Route.useSearch() as unknown as Accessor<PageSearchParams>;
-
-  const header = () => searchParams().header;
-
   const navigate = Route.useNavigate();
+
+  // Single source of truth for the header value
+  const [headerValue, setHeaderValue] = createSignal('');
+
+  // Flag to prevent infinite loops
+  const [isUpdatingFromUrl, setIsUpdatingFromUrl] = createSignal(false);
+
+  // Sync from URL to local state
+  createEffect(() => {
+    const urlHeader = searchParams().header;
+
+    // Only update if different and not currently updating from form
+    if (urlHeader !== headerValue() && !isUpdatingFromUrl()) {
+      setHeaderValue(urlHeader);
+    }
+  });
+
+  // Update both local state and URL
   const setHeader = (value: string) => {
-    void navigate({
-      search: {
-        header: value,
-      },
-    });
+    // Don't update if value hasn't changed
+    if (value === headerValue()) return;
+
+    // Set flag to indicate we're updating from form
+    setIsUpdatingFromUrl(true);
+
+    try {
+      // Update local state
+      setHeaderValue(value);
+
+      // Update URL with replace to avoid browser history issues
+      void navigate({ search: { header: value } }, { replace: true });
+    } finally {
+      // Clear flag after a brief delay
+      setTimeout(() => setIsUpdatingFromUrl(false), 50);
+    }
   };
 
   // Example headers for quick selection
@@ -61,12 +87,12 @@ function RouteComponent() {
                   >
                     Cache-Control Header
                   </label>
-                  {header() && (
+                  {headerValue() && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        void navigator.clipboard.writeText(header());
+                        void navigator.clipboard.writeText(headerValue());
                       }}
                     >
                       Copy
@@ -76,7 +102,7 @@ function RouteComponent() {
                 <input
                   id="cache-control-input"
                   type="text"
-                  value={header()}
+                  value={headerValue()}
                   onInput={(e) => setHeader(e.currentTarget.value)}
                   placeholder="e.g. max-age=3600, no-cache, public"
                   class="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 font-mono text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
@@ -132,13 +158,13 @@ function RouteComponent() {
           <div>
             <h2 class="mb-4 text-xl font-semibold">Configure Options</h2>
             {/* Pass the header value to the form and listen for changes */}
-            <GenerateForm headerValue={header()} onGenerate={setHeader} />
+            <GenerateForm headerValue={headerValue()} onGenerate={setHeader} />
           </div>
 
           {/* Explanation Panel */}
           <div class="space-y-6">
             <Show
-              when={header()}
+              when={headerValue()}
               fallback={
                 <p class="text-muted-foreground text-center italic">
                   Configure options or enter a Cache-Control header above to see
@@ -149,7 +175,7 @@ function RouteComponent() {
               <div class="border-border border-t pt-6">
                 <h2 class="mb-4 text-xl font-semibold">Header Explanation</h2>
                 <div class="space-y-4">
-                  <For each={parseHeader(header())}>
+                  <For each={parseHeader(headerValue())}>
                     {(directive) => (
                       <Card class="p-4">
                         <h4 class="text-md flex items-center gap-1.5 font-medium">

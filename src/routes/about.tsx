@@ -156,11 +156,6 @@ function RouteComponent() {
                 - Styling
               </li>
             </ul>
-
-            <h2>License</h2>
-            <p>
-              This project is open source and available under the MIT License.
-            </p>
           </div>
         </Card>
       </div>

@@ -3,6 +3,7 @@ import { MetaProvider } from '@solidjs/meta';
 import { Outlet, createRootRoute } from '@tanstack/solid-router';
 
 import NavBar from '@/components/nav-bar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { clientOnly } from '@solidjs/start';
 import { Suspense } from 'solid-js';
 const Devtools = clientOnly(() => import('../components/devtools'));
@@ -18,7 +19,9 @@ function RootComponent() {
         <ColorModeScript />
         <ColorModeProvider>
           <NavBar />
-          <Outlet />
+          <ScrollArea class="h-[calc(100vh-64px)]">
+            <Outlet />
+          </ScrollArea>
         </ColorModeProvider>
         <Devtools />
       </Suspense>

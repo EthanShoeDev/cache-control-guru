@@ -38,7 +38,7 @@ function RouteComponent() {
       },
     });
   };
-  
+
   const setHeader = (value: string) => {
     void navigate({
       search: {

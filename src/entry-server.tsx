@@ -20,7 +20,7 @@ export default createHandler(
   () => (
     <StartServer
       document={({ assets, children, scripts }) => (
-        <html lang="en">
+        <html lang="en" class="overflow-hidden">
           <head>
             <meta charset="utf-8" />
             <meta
@@ -101,7 +101,7 @@ export default createHandler(
 
             {assets}
           </head>
-          <body>
+          <body class="transition-colors duration-200">
             <div id="app">{children}</div>
             {scripts}
           </body>

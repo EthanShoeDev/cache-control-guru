@@ -19,7 +19,7 @@ function RouteComponent() {
         </div>
 
         <Card class="p-6">
-          <div class="prose max-w-none">
+          <div class="prose dark:prose-invert max-w-none">
             <h2>What is Cache-Control?</h2>
             <p>
               The <code>Cache-Control</code> HTTP header field is used to

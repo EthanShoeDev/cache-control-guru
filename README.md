@@ -1,44 +1,67 @@
-# Inspired by:
+# 🌐 Cache-Control Guru
 
-- https://crontab.guru/
-- https://kurtextrem.de/cache
+![Cache-Control Guru](public/header.svg)
 
-# Depenencies
+A web application that helps you understand and generate HTTP Cache-Control headers with ease.
 
-- [SolidStart](https://docs.solidjs.com/solid-start)
-- [shadcn-solid](https://shadcn-solid.com/)
-- [Tanstack Form](https://tanstack.com/form/latest)
-- [Tailwind v4](https://tailwindcss.com/blog/tailwindcss-v4)
+## 🚀 Features
 
-# SolidStart
+- **Explain Mode**: Paste in any Cache-Control header and get a detailed explanation of each directive
+- **Generate Mode**: Build the perfect Cache-Control header using a user-friendly interface
+- **Shareable URLs**: Share your headers via URL parameters
+- **Dark/Light Mode**: Choose your preferred theme
 
-Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);
+## 🧰 Tech Stack
 
-## Creating a project
+- **[SolidJS](https://www.solidjs.com/)**: Fast, reactive UI library
+- **[TanStack Router](https://tanstack.com/router/latest)**: Type-safe routing with URL state
+- **[shadcn-solid](https://shadcn-solid.com/)**: High-quality UI components
+- **[Kobalte](https://kobalte.dev/)**: Accessible UI primitives
+- **[Tailwind CSS v4](https://tailwindcss.com/blog/tailwindcss-v4)**: Utility-first CSS framework
 
-```bash
-# create a new project in the current directory
-npm init solid@latest
-
-# create a new project in my-app
-npm init solid@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## 🏃‍♂️ Running Locally
 
 ```bash
-npm run dev
+# Install dependencies
+pnpm install
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# Start the development server
+pnpm run dev
+
+# Build for production
+pnpm run build
+
+# Start the production server
+pnpm run start
 ```
 
-## Building
+## 📝 Understanding Cache-Control
 
-Solid apps are built with _presets_, which optimise your project for deployment to different environments.
+The Cache-Control HTTP header controls how browsers and CDNs cache content:
 
-By default, `npm run build` will generate a Node app that you can run with `npm start`. To use a different preset, add it to the `devDependencies` in `package.json` and specify in your `app.config.js`.
+```
+Cache-Control: public, max-age=3600, immutable
+```
 
-## This project was created with the [Solid CLI](https://solid-cli.netlify.app)
+The above header tells browsers and CDNs that:
+
+- This content can be cached by any cache (`public`)
+- The cache can be used for 1 hour before checking for updates (`max-age=3600`)
+- The content will never change, so browsers can skip revalidation on reload (`immutable`)
+
+## 💡 Inspiration
+
+This project was inspired by user-friendly tools that simplify complex technical topics:
+
+- [crontab.guru](https://crontab.guru/) - The cron schedule expression editor
+- [kurtextrem.de/cache](https://kurtextrem.de/cache) - Cache-Control header builder
+
+## 📖 Resources
+
+- [MDN: Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control)
+- [web.dev: HTTP caching](https://web.dev/articles/http-cache)
+- [Cloudflare: Cache-Control](https://developers.cloudflare.com/cache/concepts/cache-control/)
+
+## 📄 License
+
+MIT

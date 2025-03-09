@@ -1,0 +1,18 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .background { fill: #1a1a2e; }
+    .title { fill: white; font-family: system-ui, sans-serif; font-size: 72px; font-weight: bold; }
+    .subtitle { fill: #a0a0c0; font-family: system-ui, sans-serif; font-size: 36px; }
+    .code { fill: #e1e1ff; font-family: monospace; font-size: 32px; }
+    .border { fill: none; stroke: #4a4a7c; stroke-width: 4; rx: 20; ry: 20; }
+  </style>
+  
+  <rect width="1200" height="630" class="background" />
+  
+  <rect x="100" y="100" width="1000" height="430" class="border" />
+  
+  <text x="600" y="180" text-anchor="middle" class="title">Cache-Control Guru</text>
+  <text x="600" y="240" text-anchor="middle" class="subtitle">Understand and generate HTTP cache headers with ease</text>
+  
+  <text x="600" y="380" text-anchor="middle" class="code">Cache-Control: public, max-age=86400, immutable</text>
+</svg>

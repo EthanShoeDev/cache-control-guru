@@ -28,4 +28,14 @@ export default tseslint.config(
       },
     },
   },
+  {
+    ignores: [
+      '**/**.gen.*',
+      'docs/**/**',
+      'node_modules/**',
+      'dist/**',
+      '.vinxi/**',
+      '.output/**',
+    ],
+  },
 );

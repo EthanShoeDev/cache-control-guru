@@ -1,0 +1,6 @@
+# Allow all web crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location (once available)
+Sitemap: https://cache-control.guru/sitemap.xml

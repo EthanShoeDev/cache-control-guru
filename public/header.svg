@@ -1,0 +1,14 @@
+<svg width="800" height="200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .background { fill: #1a1a2e; }
+    .title { fill: white; font-family: system-ui, sans-serif; font-size: 48px; font-weight: bold; }
+    .subtitle { fill: #a0a0c0; font-family: system-ui, sans-serif; font-size: 24px; }
+    .border { fill: none; stroke: #4a4a7c; stroke-width: 4; rx: 12; ry: 12; }
+  </style>
+  
+  <rect width="800" height="200" class="background" />
+  <rect x="20" y="20" width="760" height="160" class="border" />
+  
+  <text x="400" y="90" text-anchor="middle" class="title">Cache-Control Guru</text>
+  <text x="400" y="130" text-anchor="middle" class="subtitle">Make browser caching easy</text>
+</svg>

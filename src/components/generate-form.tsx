@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { directives } from '@/lib/cache-control';
+import { directives, parseHeader } from '@/lib/cache-control';
 import { createEffect, createSignal, Show, type Component } from 'solid-js';
 
 // InfoIcon component for tooltips
@@ -34,6 +34,7 @@ const InfoIcon: Component<{ tooltip: string }> = (props) => {
 };
 
 interface GenerateFormProps {
+  headerValue: string;
   onGenerate: (headerValue: string) => void;
   class?: string;
 }
@@ -52,6 +53,20 @@ const convertToSeconds = (value: number, unit: TimeUnit): number => {
     default:
       return value;
   }
+};
+
+// Helper function to parse seconds to a unit and value
+const parseSeconds = (seconds: number): { value: number; unit: TimeUnit } => {
+  if (seconds % (60 * 60 * 24) === 0 && seconds >= 60 * 60 * 24) {
+    return { value: seconds / (60 * 60 * 24), unit: 'days' };
+  }
+  if (seconds % (60 * 60) === 0 && seconds >= 60 * 60) {
+    return { value: seconds / (60 * 60), unit: 'hours' };
+  }
+  if (seconds % 60 === 0 && seconds >= 60) {
+    return { value: seconds / 60, unit: 'minutes' };
+  }
+  return { value: seconds, unit: 'seconds' };
 };
 
 // Constants for warnings
@@ -74,7 +89,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
   const [immutable, setImmutable] = createSignal(false);
 
   // Max-age state
-  const [maxAgeEnabled, setMaxAgeEnabled] = createSignal(true);
+  const [maxAgeEnabled, setMaxAgeEnabled] = createSignal(false);
   const [maxAgeValue, setMaxAgeValue] = createSignal(3600);
   const [maxAgeUnit, setMaxAgeUnit] = createSignal<TimeUnit>('seconds');
 
@@ -95,6 +110,105 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
   // No-transform state
   const [noTransform, setNoTransform] = createSignal(false);
+
+  // Boolean to track if we're currently updating from header input
+  const [updatingFromHeader, setUpdatingFromHeader] = createSignal(false);
+
+  // Effect to update form state based on header input
+  createEffect(() => {
+    const headerValue = props.headerValue;
+    if (!headerValue) {
+      // If header is empty, reset to default state but don't emit changes
+      resetForm(false);
+      return;
+    }
+
+    // Don't process if we're already updating from the form itself
+    if (updatingFromHeader()) return;
+
+    setUpdatingFromHeader(true);
+
+    try {
+      const directives = parseHeader(headerValue);
+      
+      // Reset form first to clear any previous state
+      resetForm(false);
+
+      // Update cache type
+      if (directives.some(d => d.name === 'no-store')) {
+        setCacheType('no-store');
+      } else if (directives.some(d => d.name === 'private')) {
+        setCacheType('private');
+      } else if (directives.some(d => d.name === 'public')) {
+        setCacheType('public');
+      } else {
+        setCacheType('public'); // Default to public if not specified
+      }
+
+      // Update fresh behavior
+      if (directives.some(d => d.name === 'no-cache')) {
+        setFreshBehavior('no-cache');
+      } else {
+        setFreshBehavior('default');
+      }
+
+      // Update validation options
+      setMustRevalidate(directives.some(d => d.name === 'must-revalidate'));
+      setProxyRevalidate(directives.some(d => d.name === 'proxy-revalidate'));
+      setImmutable(directives.some(d => d.name === 'immutable'));
+      setNoTransform(directives.some(d => d.name === 'no-transform'));
+
+      // Update max-age
+      const maxAgeDirective = directives.find(d => d.name === 'max-age');
+      if (maxAgeDirective && maxAgeDirective.value) {
+        const seconds = parseInt(maxAgeDirective.value, 10);
+        if (!isNaN(seconds)) {
+          const { value, unit } = parseSeconds(seconds);
+          setMaxAgeEnabled(true);
+          setMaxAgeValue(value);
+          setMaxAgeUnit(unit);
+        }
+      }
+
+      // Update s-maxage
+      const sMaxAgeDirective = directives.find(d => d.name === 's-maxage');
+      if (sMaxAgeDirective && sMaxAgeDirective.value) {
+        const seconds = parseInt(sMaxAgeDirective.value, 10);
+        if (!isNaN(seconds)) {
+          const { value, unit } = parseSeconds(seconds);
+          setSMaxAgeEnabled(true);
+          setSMaxAgeValue(value);
+          setSMaxAgeUnit(unit);
+        }
+      }
+
+      // Update stale-while-revalidate
+      const swrDirective = directives.find(d => d.name === 'stale-while-revalidate');
+      if (swrDirective && swrDirective.value) {
+        const seconds = parseInt(swrDirective.value, 10);
+        if (!isNaN(seconds)) {
+          const { value, unit } = parseSeconds(seconds);
+          setStaleWhileRevalidateEnabled(true);
+          setStaleWhileRevalidateValue(value);
+          setStaleWhileRevalidateUnit(unit);
+        }
+      }
+
+      // Update stale-if-error
+      const sieDirective = directives.find(d => d.name === 'stale-if-error');
+      if (sieDirective && sieDirective.value) {
+        const seconds = parseInt(sieDirective.value, 10);
+        if (!isNaN(seconds)) {
+          const { value, unit } = parseSeconds(seconds);
+          setStaleIfErrorEnabled(true);
+          setStaleIfErrorValue(value);
+          setStaleIfErrorUnit(unit);
+        }
+      }
+    } finally {
+      setUpdatingFromHeader(false);
+    }
+  });
 
   // Computed property to check if all inputs should be disabled based on no-store
   const isNoStore = () => cacheType() === 'no-store';
@@ -125,6 +239,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
   // Effect to handle mutual exclusions and interactions
   createEffect(() => {
+    // Skip if we're currently updating from header
+    if (updatingFromHeader()) return;
+
     // If no-store is selected, disable other caching options
     if (isNoStore()) {
       setMaxAgeEnabled(false);
@@ -148,10 +265,10 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
   });
 
   // Function to reset form to default state
-  const resetForm = () => {
+  const resetForm = (emitChanges = true) => {
     setCacheType('public');
     setFreshBehavior('default');
-    setMaxAgeEnabled(true);
+    setMaxAgeEnabled(false);
     setMaxAgeValue(3600);
     setMaxAgeUnit('seconds');
     setSMaxAgeEnabled(false);
@@ -167,10 +284,17 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
     setStaleIfErrorValue(300);
     setStaleIfErrorUnit('seconds');
     setNoTransform(false);
+
+    if (emitChanges) {
+      generateHeader();
+    }
   };
 
   // Function to generate the Cache-Control header
   const generateHeader = () => {
+    // Skip if we're updating from header
+    if (updatingFromHeader()) return;
+
     const directives = [];
 
     // Cache Type directives
@@ -630,7 +754,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
         <div class="flex justify-end">
           <Button 
             variant="outline" 
-            onClick={resetForm}
+            onClick={() => resetForm()}
             class="text-sm"
           >
             Reset to Defaults

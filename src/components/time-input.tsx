@@ -9,7 +9,7 @@ import { createSignal, Show, type Component } from 'solid-js';
 type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
 interface TimeInputProps {
-  label: string | JSX.Element;
+  label: string | ReturnType<Component>;
   value: number;
   unit: TimeUnit;
   enabled: boolean;

@@ -74,7 +74,7 @@ export const directives: Record<
   },
   'stale-while-revalidate': {
     description:
-      'Allows serving stale content while revalidating in the background. This improves performance by returning cached content immediately while asynchronously checking if it\'s still current. Support varies across CDNs: Cloudflare requires Enterprise plan with Cache Rules, AWS CloudFront needs Lambda@Edge customization, Fastly and Akamai fully support it. Chrome, Firefox, and Edge browsers support it; Safari has limited support.',
+      "Allows serving stale content while revalidating in the background. This improves performance by returning cached content immediately while asynchronously checking if it's still current. Support varies across CDNs: Cloudflare requires Enterprise plan with Cache Rules, AWS CloudFront needs Lambda@Edge customization, Fastly and Akamai fully support it. Chrome, Firefox, and Edge browsers support it; Safari has limited support.",
     category: 'validation',
     type: 'response',
   },

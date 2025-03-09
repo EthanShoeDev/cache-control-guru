@@ -14,28 +14,34 @@ Lots of the current code basse relies on Explain / Generate split. We should be 
 
 - We need to do some ui layout changes.
 
-After you are done, describe a summary of your changes within this file `docs/refining-6.md` below this line
---------------------------
+## After you are done, describe a summary of your changes within this file `docs/refining-6.md` below this line
+
+---
 
 # Changes Made for Unified Interface
 
 ## User Interface Redesign
+
 1. Implemented a single unified interface with:
    - Header input field at the top for direct editing of the Cache-Control header
    - Form controls below that sync bidirectionally with the header input
    - Explanation section that updates in real-time based on the header
 
 ## Code Structure Improvements
+
 1. Removed redundant components:
+
    - Deleted `mode-tabs.tsx` (no longer needed for mode switching)
    - Deleted `explain-input.tsx` (integrated into main page)
    - Deleted `header-display.tsx` (integrated into main page)
 
 2. Simplified route parameters:
+
    - Removed the `mode` parameter from URL search params
    - Consolidated to a single `header` parameter
 
 3. Enhanced the GenerateForm component:
+
    - Added bidirectional sync between form and header input
    - Implemented `parseHeader()` to update form state from manual text input
    - Added flag to prevent infinite update loops
@@ -47,11 +53,14 @@ After you are done, describe a summary of your changes within this file `docs/re
    - Two-column layout with form on left, explanations on right
 
 ## Technical Features
+
 1. Added a state management layer to avoid infinite loops:
+
    - Implemented `updatingFromHeader` flag to prevent cycles
    - Form triggers generate only when changed by user, not by header parsing
 
 2. Improved header parsing logic:
+
    - Added `parseSeconds()` function to convert seconds to appropriate units
    - Added reset logic to clear form state when header is empty
 

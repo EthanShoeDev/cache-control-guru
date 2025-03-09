@@ -8,28 +8,19 @@ import {
   CheckboxLabel,
 } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 import { directives, parseHeader } from '@/lib/cache-control';
-import { createEffect, createSignal, Show, type Component } from 'solid-js';
+import { cn } from '@/lib/utils';
+import { createEffect, createSignal, type Component } from 'solid-js';
 
-// InfoIcon component for tooltips
-const InfoIcon: Component<{ tooltip: string }> = (props) => {
+// SectionDescription component for section headers
+const SectionDescription: Component<{ title: string; description: string }> = (
+  props,
+) => {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span class="inline-flex items-center justify-center ml-1 w-4 h-4 rounded-full bg-primary/10 text-primary hover:bg-primary/20 cursor-help text-xs">
-          i
-        </span>
-      </TooltipTrigger>
-      <TooltipContent class="max-w-[300px]">
-        {props.tooltip}
-      </TooltipContent>
-    </Tooltip>
+    <div class="mb-3">
+      <h3 class="text-primary text-lg font-medium">{props.title}</h3>
+      <p class="text-muted-foreground mt-1 text-sm">{props.description}</p>
+    </div>
   );
 };
 
@@ -74,14 +65,14 @@ const ONE_YEAR_IN_SECONDS = 31536000; // 365 days
 
 export const GenerateForm: Component<GenerateFormProps> = (props) => {
   // State for Cache Type section (mutually exclusive radio buttons)
-  const [cacheType, setCacheType] = createSignal<'public' | 'private' | 'no-store'>(
-    'public'
-  );
+  const [cacheType, setCacheType] = createSignal<
+    'public' | 'private' | 'no-store'
+  >('public');
 
   // State for Cache Behavior for Fresh Responses section (mutually exclusive)
-  const [freshBehavior, setFreshBehavior] = createSignal<'default' | 'no-cache'>(
-    'default'
-  );
+  const [freshBehavior, setFreshBehavior] = createSignal<
+    'default' | 'no-cache'
+  >('default');
 
   // State for validation options
   const [mustRevalidate, setMustRevalidate] = createSignal(false);
@@ -99,14 +90,18 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
   const [sMaxAgeUnit, setSMaxAgeUnit] = createSignal<TimeUnit>('seconds');
 
   // Stale-while-revalidate state
-  const [staleWhileRevalidateEnabled, setStaleWhileRevalidateEnabled] = createSignal(false);
-  const [staleWhileRevalidateValue, setStaleWhileRevalidateValue] = createSignal(60);
-  const [staleWhileRevalidateUnit, setStaleWhileRevalidateUnit] = createSignal<TimeUnit>('seconds');
+  const [staleWhileRevalidateEnabled, setStaleWhileRevalidateEnabled] =
+    createSignal(false);
+  const [staleWhileRevalidateValue, setStaleWhileRevalidateValue] =
+    createSignal(60);
+  const [staleWhileRevalidateUnit, setStaleWhileRevalidateUnit] =
+    createSignal<TimeUnit>('seconds');
 
   // Stale-if-error state
   const [staleIfErrorEnabled, setStaleIfErrorEnabled] = createSignal(false);
   const [staleIfErrorValue, setStaleIfErrorValue] = createSignal(300);
-  const [staleIfErrorUnit, setStaleIfErrorUnit] = createSignal<TimeUnit>('seconds');
+  const [staleIfErrorUnit, setStaleIfErrorUnit] =
+    createSignal<TimeUnit>('seconds');
 
   // No-transform state
   const [noTransform, setNoTransform] = createSignal(false);
@@ -130,36 +125,36 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
     try {
       const directives = parseHeader(headerValue);
-      
+
       // Reset form first to clear any previous state
       resetForm(false);
 
       // Update cache type
-      if (directives.some(d => d.name === 'no-store')) {
+      if (directives.some((d) => d.name === 'no-store')) {
         setCacheType('no-store');
-      } else if (directives.some(d => d.name === 'private')) {
+      } else if (directives.some((d) => d.name === 'private')) {
         setCacheType('private');
-      } else if (directives.some(d => d.name === 'public')) {
+      } else if (directives.some((d) => d.name === 'public')) {
         setCacheType('public');
       } else {
         setCacheType('public'); // Default to public if not specified
       }
 
       // Update fresh behavior
-      if (directives.some(d => d.name === 'no-cache')) {
+      if (directives.some((d) => d.name === 'no-cache')) {
         setFreshBehavior('no-cache');
       } else {
         setFreshBehavior('default');
       }
 
       // Update validation options
-      setMustRevalidate(directives.some(d => d.name === 'must-revalidate'));
-      setProxyRevalidate(directives.some(d => d.name === 'proxy-revalidate'));
-      setImmutable(directives.some(d => d.name === 'immutable'));
-      setNoTransform(directives.some(d => d.name === 'no-transform'));
+      setMustRevalidate(directives.some((d) => d.name === 'must-revalidate'));
+      setProxyRevalidate(directives.some((d) => d.name === 'proxy-revalidate'));
+      setImmutable(directives.some((d) => d.name === 'immutable'));
+      setNoTransform(directives.some((d) => d.name === 'no-transform'));
 
       // Update max-age
-      const maxAgeDirective = directives.find(d => d.name === 'max-age');
+      const maxAgeDirective = directives.find((d) => d.name === 'max-age');
       if (maxAgeDirective && maxAgeDirective.value) {
         const seconds = parseInt(maxAgeDirective.value, 10);
         if (!isNaN(seconds)) {
@@ -171,7 +166,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
       }
 
       // Update s-maxage
-      const sMaxAgeDirective = directives.find(d => d.name === 's-maxage');
+      const sMaxAgeDirective = directives.find((d) => d.name === 's-maxage');
       if (sMaxAgeDirective && sMaxAgeDirective.value) {
         const seconds = parseInt(sMaxAgeDirective.value, 10);
         if (!isNaN(seconds)) {
@@ -183,7 +178,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
       }
 
       // Update stale-while-revalidate
-      const swrDirective = directives.find(d => d.name === 'stale-while-revalidate');
+      const swrDirective = directives.find(
+        (d) => d.name === 'stale-while-revalidate',
+      );
       if (swrDirective && swrDirective.value) {
         const seconds = parseInt(swrDirective.value, 10);
         if (!isNaN(seconds)) {
@@ -195,7 +192,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
       }
 
       // Update stale-if-error
-      const sieDirective = directives.find(d => d.name === 'stale-if-error');
+      const sieDirective = directives.find((d) => d.name === 'stale-if-error');
       if (sieDirective && sieDirective.value) {
         const seconds = parseInt(sieDirective.value, 10);
         if (!isNaN(seconds)) {
@@ -224,17 +221,27 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
   const sMaxAgeExceedsYear = () => {
     if (!sMaxAgeEnabled()) return false;
-    return convertToSeconds(sMaxAgeValue(), sMaxAgeUnit()) > ONE_YEAR_IN_SECONDS;
+    return (
+      convertToSeconds(sMaxAgeValue(), sMaxAgeUnit()) > ONE_YEAR_IN_SECONDS
+    );
   };
 
   const staleWhileRevalidateExceedsYear = () => {
     if (!staleWhileRevalidateEnabled()) return false;
-    return convertToSeconds(staleWhileRevalidateValue(), staleWhileRevalidateUnit()) > ONE_YEAR_IN_SECONDS;
+    return (
+      convertToSeconds(
+        staleWhileRevalidateValue(),
+        staleWhileRevalidateUnit(),
+      ) > ONE_YEAR_IN_SECONDS
+    );
   };
 
   const staleIfErrorExceedsYear = () => {
     if (!staleIfErrorEnabled()) return false;
-    return convertToSeconds(staleIfErrorValue(), staleIfErrorUnit()) > ONE_YEAR_IN_SECONDS;
+    return (
+      convertToSeconds(staleIfErrorValue(), staleIfErrorUnit()) >
+      ONE_YEAR_IN_SECONDS
+    );
   };
 
   // Effect to handle mutual exclusions and interactions
@@ -307,7 +314,8 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
     // Validation directives
     if (mustRevalidate()) directives.push('must-revalidate');
-    if (proxyRevalidate() && cacheType() === 'public') directives.push('proxy-revalidate');
+    if (proxyRevalidate() && cacheType() === 'public')
+      directives.push('proxy-revalidate');
     if (immutable()) directives.push('immutable');
 
     // Time-based directives
@@ -343,7 +351,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
     // Sort directives alphabetically for readability
     directives.sort();
-    
+
     const headerValue = directives.join(', ');
     props.onGenerate(headerValue);
   };
@@ -353,64 +361,83 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
       <div class="space-y-6">
         {/* 1. Cache Type Section */}
         <div>
-          <h3 class="text-primary mb-3 text-lg font-medium">1. Cache Type</h3>
+          <SectionDescription
+            title="1. Cache Type"
+            description="Determines which caches can store the response. This is the most basic setting for controlling caching behavior."
+          />
           <Card class="space-y-4 p-4">
             <div class="space-y-3">
-              <p class="text-sm font-medium">Select how the response can be cached:</p>
-              <div class="flex flex-col gap-2">
-                <label class="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="cacheType"
-                    value="public"
-                    checked={cacheType() === 'public'}
-                    onChange={() => setCacheType('public')}
-                    class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                  />
-                  <span class="text-sm leading-none font-medium flex items-center">
-                    Public
-                    <InfoIcon tooltip="Suitable for content that can be shared among multiple users, such as static images or CSS files." />
-                  </span>
-                </label>
-                <p class="text-muted-foreground ml-6 text-xs">
-                  {directives.public.description}
-                </p>
+              <p class="text-sm font-medium">
+                Select how the response can be cached:
+              </p>
+              <div class="flex flex-col gap-4">
+                <div>
+                  <label class="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="cacheType"
+                      value="public"
+                      checked={cacheType() === 'public'}
+                      onChange={() => setCacheType('public')}
+                      class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                    />
+                    <span class="text-sm leading-none font-medium">Public</span>
+                  </label>
+                  <div class="mt-2 ml-6">
+                    <p class="text-sm">{directives.public.description}</p>
+                    <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                      Suitable for content that can be shared among multiple
+                      users, such as static images or CSS files.
+                    </p>
+                  </div>
+                </div>
 
-                <label class="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="cacheType"
-                    value="private"
-                    checked={cacheType() === 'private'}
-                    onChange={() => setCacheType('private')}
-                    class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                  />
-                  <span class="text-sm leading-none font-medium flex items-center">
-                    Private
-                    <InfoIcon tooltip="Use for personalized content or data that should not be shared, like user-specific pages." />
-                  </span>
-                </label>
-                <p class="text-muted-foreground ml-6 text-xs">
-                  {directives.private.description}
-                </p>
+                <div>
+                  <label class="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="cacheType"
+                      value="private"
+                      checked={cacheType() === 'private'}
+                      onChange={() => setCacheType('private')}
+                      class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                    />
+                    <span class="text-sm leading-none font-medium">
+                      Private
+                    </span>
+                  </label>
+                  <div class="mt-2 ml-6">
+                    <p class="text-sm">{directives.private.description}</p>
+                    <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                      Use this for personalized content or data that should not
+                      be shared, like user-specific pages.
+                    </p>
+                  </div>
+                </div>
 
-                <label class="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="cacheType"
-                    value="no-store"
-                    checked={cacheType() === 'no-store'}
-                    onChange={() => setCacheType('no-store')}
-                    class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                  />
-                  <span class="text-sm leading-none font-medium flex items-center">
-                    No caching (no-store)
-                    <InfoIcon tooltip="Ensures that no part of the response is cached, important for privacy and security, overrides all other directives." />
-                  </span>
-                </label>
-                <p class="text-muted-foreground ml-6 text-xs">
-                  {directives['no-store'].description}
-                </p>
+                <div>
+                  <label class="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="cacheType"
+                      value="no-store"
+                      checked={cacheType() === 'no-store'}
+                      onChange={() => setCacheType('no-store')}
+                      class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                    />
+                    <span class="text-sm leading-none font-medium">
+                      No caching (no-store)
+                    </span>
+                  </label>
+                  <div class="mt-2 ml-6">
+                    <p class="text-sm">{directives['no-store'].description}</p>
+                    <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                      Ensures that no part of the response is cached, important
+                      for privacy and security. This overrides all other
+                      directives.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
@@ -418,23 +445,21 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
         {/* 2. Freshness Duration Section */}
         <div class={isNoStore() ? 'opacity-50' : ''}>
-          <h3 class="text-primary mb-3 text-lg font-medium">2. Freshness Duration</h3>
+          <SectionDescription
+            title="2. Freshness Duration"
+            description="Controls how long the response can be used before it becomes stale and potentially needs revalidation."
+          />
           <Card class="space-y-4 p-4">
-            <div className="relative">
+            <div>
               <TimeInput
-                label={
-                  <div class="flex items-center">
-                    Max Age
-                    <InfoIcon tooltip="Specifies the maximum time the response is considered fresh. After this time, the cache must revalidate the response with the server." />
-                  </div>
-                }
+                label="Max Age"
                 value={maxAgeValue()}
                 unit={maxAgeUnit()}
                 enabled={maxAgeEnabled()}
                 onValueChange={setMaxAgeValue}
                 onUnitChange={setMaxAgeUnit}
                 onEnabledChange={setMaxAgeEnabled}
-                description={directives['max-age'].description}
+                description={`${directives['max-age'].description} After this time, the cache must revalidate the response with the server.`}
                 disabled={isNoStore()}
               />
             </div>
@@ -443,7 +468,8 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               <Alert variant="warning" class="mt-2">
                 <AlertTitle>Note:</AlertTitle>
                 <AlertDescription>
-                  Setting max-age=0 means the response is stale immediately, requiring revalidation.
+                  Setting max-age=0 means the response is stale immediately,
+                  requiring revalidation.
                 </AlertDescription>
               </Alert>
             )}
@@ -452,36 +478,28 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               <Alert variant="warning" class="mt-2">
                 <AlertTitle>Warning:</AlertTitle>
                 <AlertDescription>
-                  You've set a very long max-age value (over 1 year). This may lead to outdated content being served for an extended period.
+                  You've set a very long max-age value (over 1 year). This may
+                  lead to outdated content being served for an extended period.
                 </AlertDescription>
               </Alert>
             )}
 
-            <div className="relative">
+            <div>
               <TimeInput
-                label={
-                  <div class="flex items-center">
-                    Shared Max Age (s-maxage)
-                    <InfoIcon tooltip={
-                      cacheType() === 'private' 
-                        ? "s-maxage cannot be used with private responses" 
-                        : "Similar to max-age, but only for shared caches. Allows setting a different freshness duration for shared caches like CDNs."
-                    } />
-                  </div>
-                }
+                label="Shared Max Age (s-maxage)"
                 value={sMaxAgeValue()}
                 unit={sMaxAgeUnit()}
                 enabled={sMaxAgeEnabled()}
                 onValueChange={setSMaxAgeValue}
                 onUnitChange={setSMaxAgeUnit}
                 onEnabledChange={setSMaxAgeEnabled}
-                description={directives['s-maxage'].description}
+                description={`${directives['s-maxage'].description} Allows setting a different freshness duration for shared caches like CDNs.`}
                 disabled={isNoStore() || cacheType() === 'private'}
               />
             </div>
 
             {cacheType() === 'private' && (
-              <p class="text-yellow-600 dark:text-yellow-500 ml-6 text-xs mt-1">
+              <p class="mt-1 text-sm text-yellow-600 dark:text-yellow-500">
                 s-maxage is only available with Public cache type
               </p>
             )}
@@ -490,7 +508,9 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               <Alert variant="warning" class="mt-2">
                 <AlertTitle>Warning:</AlertTitle>
                 <AlertDescription>
-                  You've set a very long s-maxage value (over 1 year). This may lead to outdated content being served by CDNs for an extended period.
+                  You've set a very long s-maxage value (over 1 year). This may
+                  lead to outdated content being served by CDNs for an extended
+                  period.
                 </AlertDescription>
               </Alert>
             )}
@@ -507,21 +527,25 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     <CheckboxLabel class="text-sm leading-none font-medium">
                       Immutable
                     </CheckboxLabel>
-                    <InfoIcon tooltip={directives.immutable.description} />
                   </div>
                 </Checkbox>
               </div>
-              <p class="text-muted-foreground ml-6 text-xs">
-                Indicates that the response body will not change, so the cache can assume it's always fresh.
+              <p class="text-muted-foreground text-sm">
+                {directives.immutable.description} Best for versioned static
+                assets with hashed filenames that never change.
               </p>
               {immutable() && (
-                <Alert variant="warning" class="mt-2 ml-6">
+                <Alert variant="warning" class="mt-2">
                   <AlertTitle>Support Information:</AlertTitle>
                   <AlertDescription>
-                    <ul class="list-disc pl-4 space-y-1">
-                      <li><strong>Browsers:</strong> Supported in Chrome, Firefox, and Edge, but has inconsistent support in Safari</li>
-                      <li><strong>Required:</strong> HTTP/2 or newer protocol</li>
-                      <li><strong>Best for:</strong> Versioned static assets with hashed filenames that never change</li>
+                    <ul class="list-disc space-y-1 pl-4">
+                      <li>
+                        <strong>Browsers:</strong> Supported in Chrome, Firefox,
+                        and Edge, but has inconsistent support in Safari
+                      </li>
+                      <li>
+                        <strong>Required:</strong> HTTP/2 or newer protocol
+                      </li>
                     </ul>
                   </AlertDescription>
                 </Alert>
@@ -532,48 +556,68 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
         {/* 3. Cache Behavior for Fresh Responses */}
         <div class={isNoStore() ? 'opacity-50' : ''}>
-          <h3 class="text-primary mb-3 text-lg font-medium">3. Cache Behavior for Fresh Responses</h3>
+          <SectionDescription
+            title="3. Cache Behavior for Fresh Responses"
+            description="Controls whether fresh responses (within their freshness lifetime) can be used without checking with the server first."
+          />
           <Card class="space-y-4 p-4">
             <div class="space-y-3">
-              <p class="text-sm font-medium">How should caches handle responses that are still fresh?</p>
-              <div class="flex flex-col gap-2">
-                <label class="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="freshBehavior"
-                    value="default"
-                    checked={freshBehavior() === 'default'}
-                    onChange={() => setFreshBehavior('default')}
-                    disabled={isNoStore()}
-                    class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                  />
-                  <span class="text-sm leading-none font-medium flex items-center">
-                    Use fresh responses without revalidation
-                    <InfoIcon tooltip="This is the default behavior; the cache uses the response if within its freshness period, defined by max-age or s-maxage." />
-                  </span>
-                </label>
-                <p class="text-muted-foreground ml-6 text-xs">
-                  The cache can use the response without checking if it's still fresh.
-                </p>
+              <p class="text-sm font-medium">
+                How should caches handle responses that are still fresh?
+              </p>
+              <div class="flex flex-col gap-4">
+                <div>
+                  <label class="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="freshBehavior"
+                      value="default"
+                      checked={freshBehavior() === 'default'}
+                      onChange={() => setFreshBehavior('default')}
+                      disabled={isNoStore()}
+                      class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                    />
+                    <span class="text-sm leading-none font-medium">
+                      Use fresh responses without revalidation
+                    </span>
+                  </label>
+                  <div class="mt-2 ml-6">
+                    <p class="text-sm">
+                      This is the default behavior; the cache uses the response
+                      if within its freshness period.
+                    </p>
+                    <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                      Caches can serve the response directly without contacting
+                      the origin server as long as it's within the max-age
+                      timeframe.
+                    </p>
+                  </div>
+                </div>
 
-                <label class="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="freshBehavior"
-                    value="no-cache"
-                    checked={freshBehavior() === 'no-cache'}
-                    onChange={() => setFreshBehavior('no-cache')}
-                    disabled={isNoStore()}
-                    class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                  />
-                  <span class="text-sm leading-none font-medium flex items-center">
-                    Always revalidate fresh responses (no-cache)
-                    <InfoIcon tooltip="Forces revalidation even for fresh responses, potentially increasing server load. Can be combined with max-age, but max-age still defines the freshness period." />
-                  </span>
-                </label>
-                <p class="text-muted-foreground ml-6 text-xs">
-                  {directives['no-cache'].description}
-                </p>
+                <div>
+                  <label class="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="freshBehavior"
+                      value="no-cache"
+                      checked={freshBehavior() === 'no-cache'}
+                      onChange={() => setFreshBehavior('no-cache')}
+                      disabled={isNoStore()}
+                      class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                    />
+                    <span class="text-sm leading-none font-medium">
+                      Always revalidate fresh responses (no-cache)
+                    </span>
+                  </label>
+                  <div class="mt-2 ml-6">
+                    <p class="text-sm">{directives['no-cache'].description}</p>
+                    <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                      Forces revalidation even for fresh responses, potentially
+                      increasing server load. Can be combined with max-age, but
+                      max-age still defines the freshness period.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
@@ -581,9 +625,12 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
         {/* 4. Cache Behavior for Stale Responses */}
         <div class={isNoStore() ? 'opacity-50' : ''}>
-          <h3 class="text-primary mb-3 text-lg font-medium">4. Cache Behavior for Stale Responses</h3>
+          <SectionDescription
+            title="4. Cache Behavior for Stale Responses"
+            description="Controls how caches handle responses after they've become stale (exceeded their freshness lifetime)."
+          />
           <Card class="space-y-4 p-4">
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div class="flex items-center space-x-2">
                 <Checkbox
                   checked={mustRevalidate()}
@@ -595,16 +642,21 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     <CheckboxLabel class="text-sm leading-none font-medium">
                       Must Revalidate
                     </CheckboxLabel>
-                    <InfoIcon tooltip="Ensures that stale responses are not used without checking with the server, improving accuracy." />
                   </div>
                 </Checkbox>
               </div>
-              <p class="text-muted-foreground ml-6 text-xs">
-                {directives['must-revalidate'].description}
-              </p>
+              <div class="mt-2 ml-6">
+                <p class="text-sm">
+                  {directives['must-revalidate'].description}
+                </p>
+                <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                  Ensures that stale responses are not used without checking
+                  with the server, improving accuracy.
+                </p>
+              </div>
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div class="flex items-center space-x-2">
                 <Checkbox
                   checked={proxyRevalidate()}
@@ -616,110 +668,136 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     <CheckboxLabel class="text-sm leading-none font-medium">
                       Proxy Revalidate
                     </CheckboxLabel>
-                    <InfoIcon tooltip="Allows private caches to serve stale responses while requiring shared caches to revalidate, balancing performance and accuracy." />
                   </div>
                 </Checkbox>
               </div>
-              <p class="text-muted-foreground ml-6 text-xs">
-                {directives['proxy-revalidate'].description}
-              </p>
-              {cacheType() === 'private' && proxyRevalidate() === false && (
-                <p class="text-yellow-600 dark:text-yellow-500 ml-6 text-xs mt-1">
+              <div class="mt-2 ml-6">
+                <p class="text-sm">
+                  {directives['proxy-revalidate'].description}
+                </p>
+                <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                  Allows private caches to serve stale responses while requiring
+                  shared caches to revalidate.
+                </p>
+              </div>
+              {cacheType() === 'private' && (
+                <p class="text-sm text-yellow-600 dark:text-yellow-500">
                   Only available with Public cache type
                 </p>
               )}
             </div>
 
-            <div class="relative">
-              <TimeInput
-                label={
-                  <div class="flex items-center">
-                    Stale While Revalidate
-                    <InfoIcon tooltip={directives['stale-while-revalidate'].description} />
-                  </div>
-                }
-                value={staleWhileRevalidateValue()}
-                unit={staleWhileRevalidateUnit()}
-                enabled={staleWhileRevalidateEnabled()}
-                onValueChange={setStaleWhileRevalidateValue}
-                onUnitChange={setStaleWhileRevalidateUnit}
-                onEnabledChange={setStaleWhileRevalidateEnabled}
-                description="Allows a stale response to be served while a background revalidation occurs."
-                disabled={isNoStore()}
-              />
+            <div class="border-border mt-2 space-y-3 border-t pt-2">
+              <div>
+                <TimeInput
+                  label="Stale While Revalidate"
+                  value={staleWhileRevalidateValue()}
+                  unit={staleWhileRevalidateUnit()}
+                  enabled={staleWhileRevalidateEnabled()}
+                  onValueChange={setStaleWhileRevalidateValue}
+                  onUnitChange={setStaleWhileRevalidateUnit}
+                  onEnabledChange={setStaleWhileRevalidateEnabled}
+                  description="Allows a stale response to be served while a background revalidation occurs."
+                  disabled={isNoStore()}
+                />
+              </div>
+
+              {staleWhileRevalidateEnabled() && (
+                <Alert variant="warning" class="mt-2">
+                  <AlertTitle>Support Information:</AlertTitle>
+                  <AlertDescription>
+                    <ul class="list-disc space-y-1 pl-4">
+                      <li>
+                        <strong>CDNs:</strong> Cloudflare (Enterprise plan),
+                        Fastly (full support), Akamai (full support)
+                      </li>
+                      <li>
+                        <strong>Not supported natively:</strong> AWS CloudFront
+                        (requires Lambda@Edge)
+                      </li>
+                      <li>
+                        <strong>Browsers:</strong> Chrome, Firefox, Edge support
+                        it; Safari has limited support
+                      </li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {staleWhileRevalidateExceedsYear() && (
+                <Alert variant="warning" class="mt-2">
+                  <AlertTitle>Warning:</AlertTitle>
+                  <AlertDescription>
+                    You've set a very long stale-while-revalidate value (over 1
+                    year). This may lead to very outdated content being served.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
-            {staleWhileRevalidateEnabled() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Support Information:</AlertTitle>
-                <AlertDescription>
-                  <ul class="list-disc pl-4 space-y-1">
-                    <li><strong>CDNs:</strong> Cloudflare (Enterprise plan), Fastly (full support), Akamai (full support)</li>
-                    <li><strong>Not supported natively:</strong> AWS CloudFront (requires Lambda@Edge)</li>
-                    <li><strong>Browsers:</strong> Chrome, Firefox, Edge support it; Safari has limited support</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
+            <div class="border-border mt-2 space-y-3 border-t pt-2">
+              <div>
+                <TimeInput
+                  label="Stale If Error"
+                  value={staleIfErrorValue()}
+                  unit={staleIfErrorUnit()}
+                  enabled={staleIfErrorEnabled()}
+                  onValueChange={setStaleIfErrorValue}
+                  onUnitChange={setStaleIfErrorUnit}
+                  onEnabledChange={setStaleIfErrorEnabled}
+                  description="Allows a stale response to be served if the origin server returns an error."
+                  disabled={isNoStore()}
+                />
+              </div>
 
-            {staleWhileRevalidateExceedsYear() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Warning:</AlertTitle>
-                <AlertDescription>
-                  You've set a very long stale-while-revalidate value (over 1 year). This may lead to very outdated content being served.
-                </AlertDescription>
-              </Alert>
-            )}
+              {staleIfErrorEnabled() && (
+                <Alert variant="warning" class="mt-2">
+                  <AlertTitle>Support Information:</AlertTitle>
+                  <AlertDescription>
+                    <ul class="list-disc space-y-1 pl-4">
+                      <li>
+                        <strong>CDNs:</strong> Cloudflare (Enterprise plan),
+                        Fastly (full support), Akamai (supported)
+                      </li>
+                      <li>
+                        <strong>Not supported:</strong> AWS CloudFront (no
+                        native support)
+                      </li>
+                      <li>
+                        <strong>Browsers:</strong> Limited support (mainly
+                        Chrome)
+                      </li>
+                      <li>
+                        <strong>Varnish:</strong> Available through custom VCL
+                        configuration
+                      </li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            <div class="relative">
-              <TimeInput
-                label={
-                  <div class="flex items-center">
-                    Stale If Error
-                    <InfoIcon tooltip={directives['stale-if-error'].description} />
-                  </div>
-                }
-                value={staleIfErrorValue()}
-                unit={staleIfErrorUnit()}
-                enabled={staleIfErrorEnabled()}
-                onValueChange={setStaleIfErrorValue}
-                onUnitChange={setStaleIfErrorUnit}
-                onEnabledChange={setStaleIfErrorEnabled}
-                description="Allows a stale response to be served if the origin server returns an error."
-                disabled={isNoStore()}
-              />
+              {staleIfErrorExceedsYear() && (
+                <Alert variant="warning" class="mt-2">
+                  <AlertTitle>Warning:</AlertTitle>
+                  <AlertDescription>
+                    You've set a very long stale-if-error value (over 1 year).
+                    This may lead to very outdated content being served during
+                    errors.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
-
-            {staleIfErrorEnabled() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Support Information:</AlertTitle>
-                <AlertDescription>
-                  <ul class="list-disc pl-4 space-y-1">
-                    <li><strong>CDNs:</strong> Cloudflare (Enterprise plan), Fastly (full support), Akamai (supported)</li>
-                    <li><strong>Not supported:</strong> AWS CloudFront (no native support)</li>
-                    <li><strong>Browsers:</strong> Limited support (mainly Chrome)</li>
-                    <li><strong>Varnish:</strong> Available through custom VCL configuration</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {staleIfErrorExceedsYear() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Warning:</AlertTitle>
-                <AlertDescription>
-                  You've set a very long stale-if-error value (over 1 year). This may lead to very outdated content being served during errors.
-                </AlertDescription>
-              </Alert>
-            )}
           </Card>
         </div>
 
         {/* 5. Other Directives */}
         <div>
-          <h3 class="text-primary mb-3 text-lg font-medium">5. Other Directives</h3>
+          <SectionDescription
+            title="5. Other Directives"
+            description="Additional controls that can be applied to all responses regardless of cache status."
+          />
           <Card class="space-y-4 p-4">
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div class="flex items-center space-x-2">
                 <Checkbox
                   checked={noTransform()}
@@ -730,19 +808,23 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     <CheckboxLabel class="text-sm leading-none font-medium">
                       No Transform
                     </CheckboxLabel>
-                    <InfoIcon tooltip="Ensures content integrity, important for resources where exact bytes matter, like APIs or specific media." />
                   </div>
                 </Checkbox>
               </div>
-              <p class="text-muted-foreground ml-6 text-xs">
-                {directives['no-transform'].description}
-              </p>
+              <div class="mt-2 ml-6">
+                <p class="text-sm">{directives['no-transform'].description}</p>
+                <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                  Ensures content integrity by preventing proxies from modifying
+                  your content.
+                </p>
+              </div>
               {noTransform() && (
-                <div class="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-md p-2 mt-2 ml-6">
-                  <p class="text-xs text-blue-700 dark:text-blue-400">
-                    <strong>Use Case:</strong> Add this when proxies should not compress your images, 
-                    transform your JSON formats, or alter your content in any way that would 
-                    change the bytes received by the client.
+                <div class="mt-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                  <p class="text-sm text-blue-700 dark:text-blue-400">
+                    <strong>Use Case:</strong> Add this when proxies should not
+                    compress your images, transform your JSON formats, or alter
+                    your content in any way that would change the bytes received
+                    by the client.
                   </p>
                 </div>
               )}
@@ -752,11 +834,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
 
         {/* Reset Button */}
         <div class="flex justify-end">
-          <Button 
-            variant="outline" 
-            onClick={() => resetForm()}
-            class="text-sm"
-          >
+          <Button variant="outline" onClick={() => resetForm()} class="text-sm">
             Reset to Defaults
           </Button>
         </div>
@@ -764,13 +842,30 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
         {/* Directive Interactions Info */}
         <div>
           <Separator class="my-4" />
-          <h3 class="text-primary mb-3 text-lg font-medium">Directive Interactions</h3>
-          <div class="text-sm text-muted-foreground space-y-2">
-            <p>• <strong>no-store</strong> overrides all other directives; no caching occurs</p>
-            <p>• <strong>no-cache</strong> requires revalidation even for fresh responses</p>
-            <p>• <strong>s-maxage</strong> only applies to shared caches (relevant only for Public cache type)</p>
-            <p>• <strong>immutable</strong> hints at indefinite caching (HTTP/2+ support varies)</p>
-            <p>• <strong>must-revalidate</strong> requires revalidation when stale</p>
+          <h3 class="text-primary mb-3 text-lg font-medium">
+            Directive Interactions
+          </h3>
+          <div class="text-muted-foreground space-y-2 text-sm">
+            <p>
+              • <strong>no-store</strong> overrides all other directives; no
+              caching occurs
+            </p>
+            <p>
+              • <strong>no-cache</strong> requires revalidation even for fresh
+              responses
+            </p>
+            <p>
+              • <strong>s-maxage</strong> only applies to shared caches
+              (relevant only for Public cache type)
+            </p>
+            <p>
+              • <strong>immutable</strong> hints at indefinite caching (HTTP/2+
+              support varies)
+            </p>
+            <p>
+              • <strong>must-revalidate</strong> requires revalidation when
+              stale
+            </p>
           </div>
         </div>
       </div>

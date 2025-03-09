@@ -12,64 +12,64 @@ I want you to greatly improve the src/components/generate-form.tsx such that it 
 
 Current project
 
-ethan@Ethan-PC:~/cache-control-guru$ just tree-src 
+ethan@Ethan-PC:~/cache-control-guru$ just tree-src
 tree -h -I "node_modules|.git|.next|dist|.cache|docs" | cat
-[4.0K]  .
-├── [1.4K]  CLAUDE.md
-├── [1.0K]  LICENSE
-├── [2.1K]  README.md
-├── [ 598]  app.config.ts
-├── [ 299]  components.json
-├── [ 834]  eslint.config.js
-├── [ 218]  justfile
-├── [1.7K]  package.json
-├── [257K]  pnpm-lock.yaml
-├── [ 356]  prettier.config.js
-├── [4.0K]  public
-│   ├── [ 664]  favicon.ico
-│   ├── [ 697]  header.svg
-│   ├── [ 919]  og-image.svg
-│   ├── [ 132]  robots.txt
-│   └── [ 434]  sitemap.xml
-├── [4.0K]  src
-│   ├── [1.6K]  app.css
-│   ├── [ 193]  app.tsx
-│   ├── [4.0K]  components
-│   │   ├── [ 113]  devtools.tsx
-│   │   ├── [5.7K]  explain-header.tsx
-│   │   ├── [2.8K]  explain-input.tsx
-│   │   ├── [ 22K]  generate-form.tsx
-│   │   ├── [1.3K]  header-display.tsx
-│   │   ├── [ 736]  mode-tabs.tsx
-│   │   ├── [2.0K]  nav-bar.tsx
-│   │   ├── [1.8K]  theme-switch.tsx
-│   │   ├── [3.2K]  time-input.tsx
-│   │   └── [4.0K]  ui
-│   │       ├── [1.9K]  alert.tsx
-│   │       ├── [2.1K]  button.tsx
-│   │       ├── [1.5K]  card.tsx
-│   │       ├── [2.1K]  checkbox.tsx
-│   │       ├── [ 10K]  scroll-area.tsx
-│   │       ├── [ 912]  separator.tsx
-│   │       ├── [2.2K]  switch.tsx
-│   │       ├── [4.3K]  tabs.tsx
-│   │       ├── [3.5K]  textfield.tsx
-│   │       └── [1.3K]  tooltip.tsx
-│   ├── [ 214]  entry-client.tsx
-│   ├── [3.8K]  entry-server.tsx
-│   ├── [  45]  global.d.ts
-│   ├── [4.0K]  lib
-│   │   ├── [9.2K]  cache-control.ts
-│   │   └── [2.9K]  utils.ts
-│   ├── [2.9K]  routeTree.gen.ts
-│   ├── [ 591]  router.tsx
-│   └── [4.0K]  routes
-│       ├── [ 710]  $404.tsx
-│       ├── [ 851]  __root.tsx
-│       ├── [5.3K]  about.tsx
-│       └── [4.5K]  index.tsx
-├── [2.6K]  tailwind.config.js
-└── [ 445]  tsconfig.json
+[4.0K] .
+├── [1.4K] CLAUDE.md
+├── [1.0K] LICENSE
+├── [2.1K] README.md
+├── [ 598] app.config.ts
+├── [ 299] components.json
+├── [ 834] eslint.config.js
+├── [ 218] justfile
+├── [1.7K] package.json
+├── [257K] pnpm-lock.yaml
+├── [ 356] prettier.config.js
+├── [4.0K] public
+│ ├── [ 664] favicon.ico
+│ ├── [ 697] header.svg
+│ ├── [ 919] og-image.svg
+│ ├── [ 132] robots.txt
+│ └── [ 434] sitemap.xml
+├── [4.0K] src
+│ ├── [1.6K] app.css
+│ ├── [ 193] app.tsx
+│ ├── [4.0K] components
+│ │ ├── [ 113] devtools.tsx
+│ │ ├── [5.7K] explain-header.tsx
+│ │ ├── [2.8K] explain-input.tsx
+│ │ ├── [ 22K] generate-form.tsx
+│ │ ├── [1.3K] header-display.tsx
+│ │ ├── [ 736] mode-tabs.tsx
+│ │ ├── [2.0K] nav-bar.tsx
+│ │ ├── [1.8K] theme-switch.tsx
+│ │ ├── [3.2K] time-input.tsx
+│ │ └── [4.0K] ui
+│ │ ├── [1.9K] alert.tsx
+│ │ ├── [2.1K] button.tsx
+│ │ ├── [1.5K] card.tsx
+│ │ ├── [2.1K] checkbox.tsx
+│ │ ├── [ 10K] scroll-area.tsx
+│ │ ├── [ 912] separator.tsx
+│ │ ├── [2.2K] switch.tsx
+│ │ ├── [4.3K] tabs.tsx
+│ │ ├── [3.5K] textfield.tsx
+│ │ └── [1.3K] tooltip.tsx
+│ ├── [ 214] entry-client.tsx
+│ ├── [3.8K] entry-server.tsx
+│ ├── [ 45] global.d.ts
+│ ├── [4.0K] lib
+│ │ ├── [9.2K] cache-control.ts
+│ │ └── [2.9K] utils.ts
+│ ├── [2.9K] routeTree.gen.ts
+│ ├── [ 591] router.tsx
+│ └── [4.0K] routes
+│ ├── [ 710] $404.tsx
+│ ├── [ 851] \_\_root.tsx
+│ ├── [5.3K] about.tsx
+│ └── [4.5K] index.tsx
+├── [2.6K] tailwind.config.js
+└── [ 445] tsconfig.json
 
 6 directories, 49 files
 
@@ -192,18 +192,17 @@ This plan provides a detailed roadmap for implementing the Cache-Control Guru ge
 Key Citations
 Cache-Control HTTP header directives MDN
 
------
+---
+
 After first pass
 
-You tried to implement `docs/refining-5.md` but one of the strings you used was: 
-
+You tried to implement `docs/refining-5.md` but one of the strings you used was:
 
 "This is an extension directive with varying support across caches." (in `src/components/generate-form.tsx`)
 
-
- This is not nearly a good enough explanation of whats going to happen. Think about this from a users 
-  perspective. What types of caches typically will and will not have support? AWS Cloudfront, Cloudflare? Will they always or only when certain things are configured? Who
-   knows. You should research that and improve the website accordingly
+This is not nearly a good enough explanation of whats going to happen. Think about this from a users
+perspective. What types of caches typically will and will not have support? AWS Cloudfront, Cloudflare? Will they always or only when certain things are configured? Who
+knows. You should research that and improve the website accordingly
 
 Also I wonder if a lot of these descriptions and things shouldn't be updated in `src/lib/cache-control.ts` we don't want to duplicate concerns of describing the spec.
 

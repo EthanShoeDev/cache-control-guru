@@ -417,7 +417,9 @@ export const GenerateForm: Component<{
                             name="cacheType"
                             value="public"
                             checked={field().state.value === 'public'}
-                            onChange={() => field().handleChange('public')}
+                            onChange={() => {
+                              field().handleChange('public');
+                            }}
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
                           <span class="text-sm leading-none font-medium">
@@ -425,7 +427,9 @@ export const GenerateForm: Component<{
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">{directives.public?.description}</p>
+                          <p class="text-sm">
+                            {directives.public?.description}
+                          </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Suitable for content that can be shared among
                             multiple users, such as static images or CSS files.
@@ -440,7 +444,9 @@ export const GenerateForm: Component<{
                             name="cacheType"
                             value="private"
                             checked={field().state.value === 'private'}
-                            onChange={() => field().handleChange('private')}
+                            onChange={() => {
+                              field().handleChange('private');
+                            }}
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
                           <span class="text-sm leading-none font-medium">
@@ -465,7 +471,9 @@ export const GenerateForm: Component<{
                             name="cacheType"
                             value="no-store"
                             checked={field().state.value === 'no-store'}
-                            onChange={() => field().handleChange('no-store')}
+                            onChange={() => {
+                              field().handleChange('no-store');
+                            }}
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
                           <span class="text-sm leading-none font-medium">
@@ -474,7 +482,7 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives['no-store'].description}
+                            {directives['no-store']?.description}
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Ensures that no part of the response is cached,
@@ -510,21 +518,21 @@ export const GenerateForm: Component<{
                     value={field().state.value.value}
                     unit={field().state.value.unit}
                     enabled={field().state.value.enabled}
-                    onValueChange={(value) =>
-                      field().handleChange({ ...field().state.value, value })
-                    }
-                    onUnitChange={(unit) =>
-                      field().handleChange({ ...field().state.value, unit })
-                    }
-                    onEnabledChange={(enabled) =>
-                      field().handleChange({ ...field().state.value, enabled })
-                    }
-                    description={`${directives['max-age'].description} After this time, the cache must revalidate the response with the server.`}
+                    onValueChange={(value) => {
+                      field().handleChange({ ...field().state.value, value });
+                    }}
+                    onUnitChange={(unit) => {
+                      field().handleChange({ ...field().state.value, unit });
+                    }}
+                    onEnabledChange={(enabled) => {
+                      field().handleChange({ ...field().state.value, enabled });
+                    }}
+                    description={`${directives['max-age']?.description ?? ''} After this time, the cache must revalidate the response with the server.`}
                     disabled={isNoStore()}
                   />
-                  {field().state.meta.errors ? (
+                  {field().state.meta.errors.join(', ') && (
                     <em role="alert">{field().state.meta.errors.join(', ')}</em>
-                  ) : null}
+                  )}
                 </div>
               )}
             </form.Field>
@@ -542,16 +550,16 @@ export const GenerateForm: Component<{
                     value={field().state.value.value}
                     unit={field().state.value.unit}
                     enabled={field().state.value.enabled}
-                    onValueChange={(value) =>
-                      field().handleChange({ ...field().state.value, value })
-                    }
-                    onUnitChange={(unit) =>
-                      field().handleChange({ ...field().state.value, unit })
-                    }
-                    onEnabledChange={(enabled) =>
-                      field().handleChange({ ...field().state.value, enabled })
-                    }
-                    description={`${directives['s-maxage'].description} Allows setting a different freshness duration for shared caches like CDNs.`}
+                    onValueChange={(value) => {
+                      field().handleChange({ ...field().state.value, value });
+                    }}
+                    onUnitChange={(unit) => {
+                      field().handleChange({ ...field().state.value, unit });
+                    }}
+                    onEnabledChange={(enabled) => {
+                      field().handleChange({ ...field().state.value, enabled });
+                    }}
+                    description={`${directives['s-maxage']?.description ?? ''} Allows setting a different freshness duration for shared caches like CDNs.`}
                     disabled={
                       isNoStore() || formState().values.cacheType === 'private'
                     }
@@ -583,7 +591,9 @@ export const GenerateForm: Component<{
                   <div class="flex items-center space-x-2">
                     <Checkbox
                       checked={field().state.value}
-                      onChange={(checked) => field().handleChange(checked)}
+                      onChange={(checked) => {
+                        field().handleChange(checked);
+                      }}
                       disabled={isNoStore()}
                     >
                       <div class="flex items-center space-x-2">
@@ -598,7 +608,7 @@ export const GenerateForm: Component<{
               </form.Field>
 
               <p class="text-muted-foreground text-sm">
-                {directives.immutable.description} Best for versioned static
+                {directives.immutable?.description} Best for versioned static
                 assets with hashed filenames that never change.
               </p>
 
@@ -643,7 +653,9 @@ export const GenerateForm: Component<{
                             name="freshBehavior"
                             value="default"
                             checked={field().state.value === 'default'}
-                            onChange={() => field().handleChange('default')}
+                            onChange={() => {
+                              field().handleChange('default');
+                            }}
                             disabled={isNoStore()}
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
@@ -671,7 +683,9 @@ export const GenerateForm: Component<{
                             name="freshBehavior"
                             value="no-cache"
                             checked={field().state.value === 'no-cache'}
-                            onChange={() => field().handleChange('no-cache')}
+                            onChange={() => {
+                              field().handleChange('no-cache');
+                            }}
                             disabled={isNoStore()}
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
@@ -681,7 +695,7 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives['no-cache'].description}
+                            {directives['no-cache']?.description}
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Forces revalidation even for fresh responses,
@@ -712,7 +726,9 @@ export const GenerateForm: Component<{
                     <div class="flex items-center space-x-2">
                       <Checkbox
                         checked={field().state.value}
-                        onChange={(checked) => field().handleChange(checked)}
+                        onChange={(checked) => {
+                          field().handleChange(checked);
+                        }}
                         disabled={isNoStore()}
                       >
                         <div class="flex items-center space-x-2">
@@ -725,7 +741,7 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        {directives['must-revalidate'].description}
+                        {directives['must-revalidate']?.description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                         Ensures that stale responses are not used without
@@ -744,7 +760,9 @@ export const GenerateForm: Component<{
                     <div class="flex items-center space-x-2">
                       <Checkbox
                         checked={field().state.value}
-                        onChange={(checked) => field().handleChange(checked)}
+                        onChange={(checked) => {
+                          field().handleChange(checked);
+                        }}
                         disabled={
                           isNoStore() ||
                           formState().values.cacheType === 'private'
@@ -760,7 +778,7 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        {directives['proxy-revalidate'].description}
+                        {directives['proxy-revalidate']?.description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                         Allows private caches to serve stale responses while
@@ -787,18 +805,18 @@ export const GenerateForm: Component<{
                       value={field().state.value.value}
                       unit={field().state.value.unit}
                       enabled={field().state.value.enabled}
-                      onValueChange={(value) =>
-                        field().handleChange({ ...field().state.value, value })
-                      }
-                      onUnitChange={(unit) =>
-                        field().handleChange({ ...field().state.value, unit })
-                      }
-                      onEnabledChange={(enabled) =>
+                      onValueChange={(value) => {
+                        field().handleChange({ ...field().state.value, value });
+                      }}
+                      onUnitChange={(unit) => {
+                        field().handleChange({ ...field().state.value, unit });
+                      }}
+                      onEnabledChange={(enabled) => {
                         field().handleChange({
                           ...field().state.value,
                           enabled,
-                        })
-                      }
+                        });
+                      }}
                       description="Allows a stale response to be served while a background revalidation occurs."
                       disabled={isNoStore()}
                     />
@@ -848,18 +866,18 @@ export const GenerateForm: Component<{
                       value={field().state.value.value}
                       unit={field().state.value.unit}
                       enabled={field().state.value.enabled}
-                      onValueChange={(value) =>
-                        field().handleChange({ ...field().state.value, value })
-                      }
-                      onUnitChange={(unit) =>
-                        field().handleChange({ ...field().state.value, unit })
-                      }
-                      onEnabledChange={(enabled) =>
+                      onValueChange={(value) => {
+                        field().handleChange({ ...field().state.value, value });
+                      }}
+                      onUnitChange={(unit) => {
+                        field().handleChange({ ...field().state.value, unit });
+                      }}
+                      onEnabledChange={(enabled) => {
                         field().handleChange({
                           ...field().state.value,
                           enabled,
-                        })
-                      }
+                        });
+                      }}
                       description="Allows a stale response to be served if the origin server returns an error."
                       disabled={isNoStore()}
                     />
@@ -920,7 +938,9 @@ export const GenerateForm: Component<{
                     <div class="flex items-center space-x-2">
                       <Checkbox
                         checked={field().state.value}
-                        onChange={(checked) => field().handleChange(checked)}
+                        onChange={(checked) => {
+                          field().handleChange(checked);
+                        }}
                       >
                         <div class="flex items-center space-x-2">
                           <CheckboxControl />
@@ -932,7 +952,7 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        {directives['no-transform'].description}
+                        {directives['no-transform']?.description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                         Ensures content integrity by preventing proxies from

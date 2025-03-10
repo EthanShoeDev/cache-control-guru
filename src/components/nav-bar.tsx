@@ -2,9 +2,9 @@ import { ThemeSwitch } from '@/components/theme-switch';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/solid-router';
 
-interface NavProps {
+type NavProps = {
   class?: string;
-}
+};
 
 export default function NavBar(props: NavProps) {
   return (

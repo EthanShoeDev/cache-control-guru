@@ -1,5 +1,9 @@
 // @refresh reload
-import { createHandler, FetchEvent, StartServer } from '@solidjs/start/server';
+import {
+  createHandler,
+  type FetchEvent,
+  StartServer,
+} from '@solidjs/start/server';
 import { createMemoryHistory } from '@tanstack/solid-router';
 import { router } from './router';
 

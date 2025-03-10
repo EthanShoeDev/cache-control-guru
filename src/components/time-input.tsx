@@ -8,7 +8,7 @@ import { createSignal, Show, type Component } from 'solid-js';
 
 export type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
-interface TimeInputProps {
+type TimeInputProps = {
   label: string | ReturnType<Component>;
   value: number;
   unit: TimeUnit;
@@ -19,7 +19,7 @@ interface TimeInputProps {
   description?: string;
   class?: string;
   disabled?: boolean;
-}
+};
 
 export const TimeInput: Component<TimeInputProps> = (props) => {
   const [focused, setFocused] = createSignal(false);

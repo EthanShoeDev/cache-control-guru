@@ -7,10 +7,10 @@ import {
 import { cn } from '@/lib/utils';
 import { createMemo, For, Show, type Component } from 'solid-js';
 
-interface ExplainHeaderProps {
+type ExplainHeaderProps = {
   headerValue: string;
   class?: string;
-}
+};
 
 export const ExplainHeader: Component<ExplainHeaderProps> = (props) => {
   const parsedDirectives = createMemo(() => parseHeader(props.headerValue));
@@ -80,10 +80,10 @@ export const ExplainHeader: Component<ExplainHeaderProps> = (props) => {
   );
 };
 
-interface DirectiveCategoryProps {
+type DirectiveCategoryProps = {
   title: string;
   directives: CacheControlDirective[];
-}
+};
 
 const DirectiveCategory: Component<DirectiveCategoryProps> = (props) => {
   return (
@@ -115,9 +115,9 @@ const DirectiveCategory: Component<DirectiveCategoryProps> = (props) => {
   );
 };
 
-interface SummarySectionProps {
+type SummarySectionProps = {
   directives: CacheControlDirective[];
-}
+};
 
 const SummarySection: Component<SummarySectionProps> = (props) => {
   // Logic to generate summary based on directives

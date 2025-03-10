@@ -14,8 +14,8 @@ export function createRouter() {
 
 export const router = createRouter();
 
-// Register things for typesafety
 declare module '@tanstack/solid-router' {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- interface needed here
   interface Register {
     router: ReturnType<typeof createRouter>;
   }

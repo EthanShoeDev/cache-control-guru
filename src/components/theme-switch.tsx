@@ -3,9 +3,9 @@ import { cn } from '@/lib/utils';
 import { useColorMode } from '@kobalte/core';
 import { type Component } from 'solid-js';
 
-interface ThemeSwitchProps {
+type ThemeSwitchProps = {
   class?: string;
-}
+};
 
 export const ThemeSwitch: Component<ThemeSwitchProps> = (props) => {
   const { setColorMode } = useColorMode();
@@ -18,7 +18,9 @@ export const ThemeSwitch: Component<ThemeSwitchProps> = (props) => {
         title="Light Theme"
         aria-label="Light Theme"
         class={cn('not-dark:bg-accent size-8')}
-        onClick={() => setColorMode('light')}
+        onClick={() => {
+          setColorMode('light');
+        }}
       >
         <LightIcon />
       </Button>
@@ -28,7 +30,9 @@ export const ThemeSwitch: Component<ThemeSwitchProps> = (props) => {
         class={cn('dark:bg-accent size-8')}
         title="Dark Theme"
         aria-label="Dark Theme"
-        onClick={() => setColorMode('dark')}
+        onClick={() => {
+          setColorMode('dark');
+        }}
       >
         <DarkIcon />
       </Button>

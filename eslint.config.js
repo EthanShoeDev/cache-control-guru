@@ -1,10 +1,10 @@
 // @ts-check
-// @ts-ignore
+// @ts-expect-error ESLint comments plugin types are not compatible with the new flat config
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import eslint from '@eslint/js';
 import * as tsParser from '@typescript-eslint/parser';
 import solid from 'eslint-plugin-solid/configs/typescript';
-import tailwind from 'eslint-plugin-tailwindcss';
+// import tailwind from 'eslint-plugin-tailwindcss';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -35,7 +35,7 @@ export default tseslint.config(
     },
   },
   // Tailwind
-  ...tailwind.configs['flat/recommended'],
+  // ...tailwind.configs['flat/recommended'],
   {
     settings: {
       tailwindcss: {
@@ -44,6 +44,7 @@ export default tseslint.config(
     },
   },
   // Eslint Comments
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- no types
   comments.recommended,
 
   // Rules

@@ -4,4 +4,6 @@ import { inject } from '@vercel/analytics';
 
 inject();
 
-mount(() => <StartClientTanstack />, document.getElementById('app')!);
+const appElement = document.getElementById('app');
+if (!appElement) throw new Error('Must have a #app element');
+mount(() => <StartClientTanstack />, appElement);

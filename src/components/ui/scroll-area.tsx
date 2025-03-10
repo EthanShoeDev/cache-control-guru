@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
+import type { JSX } from 'solid-js';
 import {
   createSignal,
-  JSX,
   mergeProps,
   onCleanup,
   onMount,
@@ -13,16 +13,16 @@ type Direction = 'ltr' | 'rtl';
 type ScrollbarType = 'auto' | 'always' | 'scroll' | 'hover';
 
 // ScrollBar component props
-interface ScrollBarProps extends JSX.HTMLAttributes<HTMLDivElement> {
+type ScrollBarProps = {
   orientation?: 'horizontal' | 'vertical';
-}
+} & JSX.HTMLAttributes<HTMLDivElement>;
 
 // ScrollArea component props
-interface ScrollAreaProps extends JSX.HTMLAttributes<HTMLDivElement> {
+type ScrollAreaProps = {
   type?: ScrollbarType;
   dir?: Direction;
   scrollHideDelay?: number;
-}
+} & JSX.HTMLAttributes<HTMLDivElement>;
 
 // Default props
 const defaultProps = {
@@ -95,8 +95,8 @@ export function ScrollArea(props: ScrollAreaProps) {
       setThumbYSize(ySize);
 
       // Set CSS variables for the thumb sizes
-      scrollAreaRef?.style.setProperty('--thumb-x-size', `${xSize}px`);
-      scrollAreaRef?.style.setProperty('--thumb-y-size', `${ySize}px`);
+      scrollAreaRef?.style.setProperty('--thumb-x-size', `${String(xSize)}px`);
+      scrollAreaRef?.style.setProperty('--thumb-y-size', `${String(ySize)}px`);
     }
   };
 
@@ -119,13 +119,19 @@ export function ScrollArea(props: ScrollAreaProps) {
       if (maxScrollLeft > 0) {
         const xOffset =
           (scrollLeft / maxScrollLeft) * (clientWidth - thumbXSize());
-        scrollAreaRef.style.setProperty('--thumb-x-offset', `${xOffset}px`);
+        scrollAreaRef.style.setProperty(
+          '--thumb-x-offset',
+          `${String(xOffset)}px`,
+        );
       }
 
       if (maxScrollTop > 0) {
         const yOffset =
           (scrollTop / maxScrollTop) * (clientHeight - thumbYSize());
-        scrollAreaRef.style.setProperty('--thumb-y-offset', `${yOffset}px`);
+        scrollAreaRef.style.setProperty(
+          '--thumb-y-offset',
+          `${String(yOffset)}px`,
+        );
       }
     }
   };
@@ -253,8 +259,8 @@ export function ScrollArea(props: ScrollAreaProps) {
       class={cn('relative', local.class)}
       data-scroll-area=""
       style={{
-        '--scroll-area-corner-width': `${cornerWidth()}px`,
-        '--scroll-area-corner-height': `${cornerHeight()}px`,
+        '--scroll-area-corner-width': `${String(cornerWidth())}px`,
+        '--scroll-area-corner-height': `${String(cornerHeight())}px`,
       }}
       dir={local.dir}
       {...others}
@@ -313,8 +319,8 @@ export function ScrollArea(props: ScrollAreaProps) {
         <div
           class="bg-border absolute"
           style={{
-            width: `${cornerWidth()}px`,
-            height: `${cornerHeight()}px`,
+            width: `${String(cornerWidth())}px`,
+            height: `${String(cornerHeight())}px`,
             right: local.dir === 'ltr' ? 0 : undefined,
             left: local.dir === 'rtl' ? 0 : undefined,
             bottom: 0,

@@ -121,15 +121,15 @@ export function parseHeader(headerValue: string): CacheControlDirective[] {
 
     if (hasValue) {
       const parts = directiveStr.split('=');
-      name = parts[0].trim().toLowerCase();
-      value = parts[1].trim();
+      name = parts[0]?.trim().toLowerCase() ?? '';
+      value = parts[1]?.trim() ?? '';
     } else {
       name = directiveStr.trim().toLowerCase();
       value = undefined;
     }
 
     // Get directive info from dictionary or mark as unknown
-    const directiveInfo = directives[name] || {
+    const directiveInfo = directives[name] ?? {
       description: 'Unknown directive or not standard.',
       category: 'other',
       type: 'both',
@@ -168,8 +168,8 @@ export function validateHeader(headerValue: string): {
   for (const directiveStr of directiveStrings) {
     if (directiveStr.includes('=')) {
       const parts = directiveStr.split('=');
-      const name = parts[0].trim().toLowerCase();
-      const value = parts[1].trim();
+      const name = parts[0]?.trim().toLowerCase() ?? '';
+      const value = parts[1]?.trim() ?? '';
 
       // Check directive name validity
       if (!name) {
@@ -223,7 +223,7 @@ export function validateHeader(headerValue: string): {
   // Check for contradicting directives
   const directiveNames = directiveStrings.map((d) => {
     return d.includes('=')
-      ? d.split('=')[0].trim().toLowerCase()
+      ? (d.split('=')[0]?.trim().toLowerCase() ?? '')
       : d.trim().toLowerCase();
   });
 
@@ -377,20 +377,20 @@ export function formatTime(seconds: number): string {
   const parts = [];
 
   if (days > 0) {
-    parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+    parts.push(`${String(days)} ${days === 1 ? 'day' : 'days'}`);
   }
 
   if (hours > 0) {
-    parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+    parts.push(`${String(hours)} ${hours === 1 ? 'hour' : 'hours'}`);
   }
 
   if (minutes > 0) {
-    parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`);
+    parts.push(`${String(minutes)} ${minutes === 1 ? 'minute' : 'minutes'}`);
   }
 
   if (remainingSeconds > 0 || parts.length === 0) {
     parts.push(
-      `${remainingSeconds} ${remainingSeconds === 1 ? 'second' : 'seconds'}`,
+      `${String(remainingSeconds)} ${remainingSeconds === 1 ? 'second' : 'seconds'}`,
     );
   }
 
@@ -481,7 +481,7 @@ export function generateHeader(formValues: FormValues): string {
       formValues.maxAge.value,
       formValues.maxAge.unit,
     );
-    directives.push(`max-age=${seconds}`);
+    directives.push(`max-age=${String(seconds)}`);
   }
 
   if (formValues.sMaxAge.enabled && formValues.sMaxAge.value >= 0) {
@@ -489,7 +489,7 @@ export function generateHeader(formValues: FormValues): string {
       formValues.sMaxAge.value,
       formValues.sMaxAge.unit,
     );
-    directives.push(`s-maxage=${seconds}`);
+    directives.push(`s-maxage=${String(seconds)}`);
   }
 
   if (
@@ -500,7 +500,7 @@ export function generateHeader(formValues: FormValues): string {
       formValues.staleWhileRevalidate.value,
       formValues.staleWhileRevalidate.unit,
     );
-    directives.push(`stale-while-revalidate=${seconds}`);
+    directives.push(`stale-while-revalidate=${String(seconds)}`);
   }
 
   if (formValues.staleIfError.enabled && formValues.staleIfError.value >= 0) {
@@ -508,7 +508,7 @@ export function generateHeader(formValues: FormValues): string {
       formValues.staleIfError.value,
       formValues.staleIfError.unit,
     );
-    directives.push(`stale-if-error=${seconds}`);
+    directives.push(`stale-if-error=${String(seconds)}`);
   }
 
   // Other directives
@@ -539,7 +539,7 @@ export function enhanceExplanation(directive: CacheControlDirective): string {
     if (directive.value && !isNaN(Number(directive.value))) {
       const seconds = parseInt(directive.value, 10);
       const humanTime = formatTime(seconds);
-      explanation += ` In this case, the value is ${seconds} seconds (${humanTime}).`;
+      explanation += ` In this case, the value is ${String(seconds)} seconds (${humanTime}).`;
     }
   }
 

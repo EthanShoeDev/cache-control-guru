@@ -67,19 +67,6 @@ const formOpts = formOptions({
   } as FormSchema,
 });
 
-// const parseSeconds = (seconds: number): { value: number; unit: TimeUnit } => {
-//   if (seconds % (60 * 60 * 24) === 0 && seconds >= 60 * 60 * 24) {
-//     return { value: seconds / (60 * 60 * 24), unit: 'days' };
-//   }
-//   if (seconds % (60 * 60) === 0 && seconds >= 60 * 60) {
-//     return { value: seconds / (60 * 60), unit: 'hours' };
-//   }
-//   if (seconds % 60 === 0 && seconds >= 60) {
-//     return { value: seconds / 60, unit: 'minutes' };
-//   }
-//   return { value: seconds, unit: 'seconds' };
-// };
-
 const formSchemaToHeaderString = (values: FormSchema) => {
   const directives = [];
 
@@ -137,11 +124,87 @@ const formSchemaToHeaderString = (values: FormSchema) => {
   return directives.join(', ');
 };
 
-const headerStringToFormSchema = (headerString: string): FormSchema => {
-  const directives = parseCacheControlHeader(headerString);
-  // TODO: Implement
-  console.log(directives);
-  return formOpts.defaultValues;
+const headerStringToFormSchema = (
+  parseResult: ReturnType<typeof parseCacheControlHeader>,
+): FormSchema => {
+  if (!parseResult.valid)
+    throw new Error('Header string not valid, cannot convert to form schema');
+
+  // Start with default values
+  const newSchema: FormSchema = { ...formOpts.defaultValues };
+  const directiveNames = parseResult.directives.map((d) => d.name);
+
+  // Set cache type
+  if (directiveNames.includes('no-store')) {
+    newSchema.cacheType = 'no-store';
+  } else if (directiveNames.includes('private')) {
+    newSchema.cacheType = 'private';
+  } else if (directiveNames.includes('public')) {
+    newSchema.cacheType = 'public';
+  }
+
+  // Set freshness behavior
+  if (directiveNames.includes('no-cache')) {
+    newSchema.freshBehavior = 'no-cache';
+  } else {
+    newSchema.freshBehavior = 'default';
+  }
+
+  // Set boolean directives
+  newSchema.mustRevalidate = directiveNames.includes('must-revalidate');
+  newSchema.proxyRevalidate = directiveNames.includes('proxy-revalidate');
+  newSchema.immutable = directiveNames.includes('immutable');
+  newSchema.noTransform = directiveNames.includes('no-transform');
+
+  // Set time-based directives
+  const findTimeDirective = (name: string) => {
+    const directive = parseResult.directives.find((d) => d.name === name);
+    if (directive && typeof directive.value === 'number') {
+      // Determine best time unit
+      let value = directive.value;
+      let unit: TimeUnit = 'seconds';
+
+      if (value % (60 * 60 * 24) === 0 && value >= 60 * 60 * 24) {
+        value = value / (60 * 60 * 24);
+        unit = 'days';
+      } else if (value % (60 * 60) === 0 && value >= 60 * 60) {
+        value = value / (60 * 60);
+        unit = 'hours';
+      } else if (value % 60 === 0 && value >= 60) {
+        value = value / 60;
+        unit = 'minutes';
+      }
+
+      return {
+        enabled: true,
+        value,
+        unit,
+      };
+    }
+    return undefined;
+  };
+
+  const maxAge = findTimeDirective('max-age');
+  if (maxAge) {
+    newSchema.maxAge = maxAge;
+  }
+
+  const sMaxAge = findTimeDirective('s-maxage');
+  if (sMaxAge) {
+    newSchema.sMaxAge = sMaxAge;
+  }
+
+  const staleWhileRevalidate = findTimeDirective('stale-while-revalidate');
+  if (staleWhileRevalidate) {
+    newSchema.staleWhileRevalidate = staleWhileRevalidate;
+  }
+
+  const staleIfError = findTimeDirective('stale-if-error');
+  if (staleIfError) {
+    newSchema.staleIfError = staleIfError;
+  }
+
+  return newSchema;
 };
 
 const ONE_YEAR_IN_SECONDS = 31536000; // 365 days
@@ -163,13 +226,16 @@ export const GenerateForm: Component<{
   });
 
   createEffect(() => {
-    // I am not sure if this effect should be combinded with the above effect
+    // q: I am not sure if this effect should be combinded with the above effect
+    // a: Considerations:
     const headerString = props.textInputHeaderValue;
     if (!headerString) return;
     const formValues = formState().values;
     const formGeneratedHeader = formSchemaToHeaderString(formValues);
     if (formGeneratedHeader === headerString) return;
-    const formSchema = headerStringToFormSchema(headerString);
+    const parseResult = parseCacheControlHeader(headerString);
+    if (!parseResult.valid) return;
+    const formSchema = headerStringToFormSchema(parseResult);
     form.reset(formSchema);
   });
 

@@ -9,7 +9,7 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "noEmit": true,
-    "types": ["vinxi/types/client", "node"],
+    "types": ["vinxi/types/client", "node", "@testing-library/jest-dom"],
     "isolatedModules": true,
     "skipLibCheck": true,
 

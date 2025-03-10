@@ -1,6 +1,8 @@
 {
     "recommendations": [
         "nefrob.vscode-just-syntax",
-        "bradlc.vscode-tailwindcss"
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "vitest.explorer"
     ]
 }

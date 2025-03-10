@@ -183,8 +183,9 @@ export function parseCacheControlHeader(headerString: string):
       valid: true;
       directives: CacheControlDirective[];
     }
-  | {
+    | {
       valid: false;
+      directives: CacheControlDirective[];
       errors: string[];
     } {
   if (!headerString.trim()) {
@@ -203,6 +204,7 @@ export function parseCacheControlHeader(headerString: string):
   return {
     valid: false,
     errors: result.error.issues.map((issue) => issue.message),
+    directives: [],
   };
 }
 

@@ -501,8 +501,7 @@ export const GenerateForm: Component<{
     if (seconds < 0)
       return `If the max-age value is negative (for example, -1) or isn't an integer (for example, 3599.99), then the caching behavior is unspecified. Caches are encouraged to treat the value as if it were 0 (this is noted in the Calculating Freshness Lifetime section of the HTTP specification).`;
     if (seconds == 0)
-      return `Setting max-age=0 means the response is stale immediately,
-                    requiring revalidation.`;
+      return `Setting max-age=0 means the response is stale immediately, requiring revalidation. Note that max-age=0 is different from no-cache: While both cause revalidation, max-age=0 allows caching while no-cache hints that caches should validate the response before storing it.`;
   };
 
   return (
@@ -741,25 +740,56 @@ export const GenerateForm: Component<{
               </form.Field>
 
               <p class="text-muted-foreground text-sm">
-                {directives.immutable.description} Best for versioned static
-                assets with hashed filenames that never change.
+                {directives.immutable.description}
               </p>
 
               {formState().values.immutable && (
-                <Alert variant="warning" class="mt-2">
-                  <AlertTitle>Support Information:</AlertTitle>
-                  <AlertDescription>
-                    <ul class="list-disc space-y-1 pl-4">
+                <>
+                  <Alert variant="warning" class="mt-2">
+                    <AlertTitle>Support Information:</AlertTitle>
+                    <AlertDescription>
+                      <ul class="list-disc space-y-1 pl-4">
+                        <li>
+                          <strong>Browsers:</strong> Supported in Chrome,
+                          Firefox, and Edge, but has inconsistent support in
+                          Safari
+                        </li>
+                        <li>
+                          <strong>Required:</strong> HTTP/2 or newer protocol
+                        </li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                    <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
+                      Best practice for immutable:
+                    </h4>
+                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                      <strong>Only</strong> use with files that have
+                      content-based hashes in their filenames (cache busting):
+                    </p>
+                    <ul class="mt-2 list-disc pl-5 text-sm text-blue-700 dark:text-blue-400">
                       <li>
-                        <strong>Browsers:</strong> Supported in Chrome, Firefox,
-                        and Edge, but has inconsistent support in Safari
+                        Good: <code>/assets/main.a7e9f32.js</code>,{' '}
+                        <code>/images/logo.34def12.png</code>
                       </li>
                       <li>
-                        <strong>Required:</strong> HTTP/2 or newer protocol
+                        Bad: <code>/assets/main.js?v=123</code>,{' '}
+                        <code>/images/logo.png</code>
                       </li>
                     </ul>
-                  </AlertDescription>
-                </Alert>
+                    <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                      <strong>Example:</strong>{' '}
+                      <code>Cache-Control: max-age=31536000, immutable</code>
+                    </p>
+                    <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                      This tells browsers "this resource will never change, so
+                      don't bother checking for updates, even when the user
+                      refreshes the page."
+                    </p>
+                  </div>
+                </>
               )}
             </div>
           </Card>
@@ -823,18 +853,17 @@ export const GenerateForm: Component<{
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
                           <span class="text-sm leading-none font-medium">
-                            Always revalidate fresh responses (no-cache)
+                            Always revalidate responses (no-cache)
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives['no-cache'].description}
-                          </p>
-                          <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Forces revalidation even for fresh responses,
-                            potentially increasing server load. Can be combined
-                            with max-age, but max-age still defines the
-                            freshness period.
+                            Requires checking with the server before using any
+                            cached response.
+                            <strong> Note:</strong> This does NOT mean "don't
+                            cache" - the browser will still store the response,
+                            but must validate it before use. For content that
+                            should never be stored, use "no-store" instead.
                           </p>
                         </div>
                       </div>
@@ -852,208 +881,230 @@ export const GenerateForm: Component<{
             description="Controls how caches handle responses after they've become stale (exceeded their freshness lifetime)."
           />
           <Card class="space-y-4 p-4">
-            <div class="space-y-3">
-              <form.Field name="mustRevalidate">
-                {(field) => (
-                  <>
-                    <div class="flex items-center space-x-2">
-                      <Checkbox
-                        checked={field().state.value}
-                        onChange={(checked) => {
-                          field().handleChange(checked);
-                        }}
-                        disabled={isNoStore()}
-                      >
-                        <div class="flex items-center space-x-2">
-                          <CheckboxControl />
-                          <CheckboxLabel class="text-sm leading-none font-medium">
-                            Must Revalidate
-                          </CheckboxLabel>
-                        </div>
-                      </Checkbox>
-                    </div>
-                    <div class="mt-2 ml-6">
-                      <p class="text-sm">
-                        {directives['must-revalidate'].description}
-                      </p>
-                      <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                        Ensures that stale responses are not used without
-                        checking with the server, improving accuracy.
-                      </p>
-                    </div>
-                  </>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="space-y-3">
+                <form.Field name="mustRevalidate">
+                  {(field) => (
+                    <>
+                      <div class="flex items-center space-x-2">
+                        <Checkbox
+                          checked={field().state.value}
+                          onChange={(checked) => {
+                            field().handleChange(checked);
+                          }}
+                          disabled={isNoStore()}
+                        >
+                          <div class="flex items-center space-x-2">
+                            <CheckboxControl />
+                            <CheckboxLabel class="text-sm leading-none font-medium">
+                              Must Revalidate
+                            </CheckboxLabel>
+                          </div>
+                        </Checkbox>
+                      </div>
+                      <div class="mt-2 ml-6">
+                        <p class="text-sm">
+                          {directives['must-revalidate'].description}
+                        </p>
+                        <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                          Ensures that stale responses are not used without
+                          checking with the server, improving accuracy.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </form.Field>
+              </div>
+
+              <div class="space-y-3">
+                <form.Field name="proxyRevalidate">
+                  {(field) => (
+                    <>
+                      <div class="flex items-center space-x-2">
+                        <Checkbox
+                          checked={field().state.value}
+                          onChange={(checked) => {
+                            field().handleChange(checked);
+                          }}
+                          disabled={
+                            isNoStore() ||
+                            formState().values.cacheType === 'private'
+                          }
+                        >
+                          <div class="flex items-center space-x-2">
+                            <CheckboxControl />
+                            <CheckboxLabel class="text-sm leading-none font-medium">
+                              Proxy Revalidate
+                            </CheckboxLabel>
+                          </div>
+                        </Checkbox>
+                      </div>
+                      <div class="mt-2 ml-6">
+                        <p class="text-sm">
+                          {directives['proxy-revalidate'].description}
+                        </p>
+                        <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                          Allows private caches to serve stale responses while
+                          requiring shared caches to revalidate.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </form.Field>
+
+                {formState().values.cacheType === 'private' && (
+                  <p class="text-sm text-yellow-600 dark:text-yellow-500">
+                    Only available with Public cache type
+                  </p>
                 )}
-              </form.Field>
-            </div>
-
-            <div class="space-y-3">
-              <form.Field name="proxyRevalidate">
-                {(field) => (
-                  <>
-                    <div class="flex items-center space-x-2">
-                      <Checkbox
-                        checked={field().state.value}
-                        onChange={(checked) => {
-                          field().handleChange(checked);
-                        }}
-                        disabled={
-                          isNoStore() ||
-                          formState().values.cacheType === 'private'
-                        }
-                      >
-                        <div class="flex items-center space-x-2">
-                          <CheckboxControl />
-                          <CheckboxLabel class="text-sm leading-none font-medium">
-                            Proxy Revalidate
-                          </CheckboxLabel>
-                        </div>
-                      </Checkbox>
-                    </div>
-                    <div class="mt-2 ml-6">
-                      <p class="text-sm">
-                        {directives['proxy-revalidate'].description}
-                      </p>
-                      <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                        Allows private caches to serve stale responses while
-                        requiring shared caches to revalidate.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </form.Field>
-
-              {formState().values.cacheType === 'private' && (
-                <p class="text-sm text-yellow-600 dark:text-yellow-500">
-                  Only available with Public cache type
-                </p>
-              )}
-            </div>
-
-            <div class="border-border mt-2 space-y-3 border-t pt-2">
-              <form.Field name="staleWhileRevalidate" validators={{}}>
-                {(field) => (
-                  <div>
-                    <TimeInput
-                      label="Stale While Revalidate"
-                      value={field().state.value.value}
-                      unit={field().state.value.unit}
-                      enabled={field().state.value.enabled}
-                      onValueChange={(value) => {
-                        field().handleChange({ ...field().state.value, value });
-                      }}
-                      onUnitChange={(unit) => {
-                        field().handleChange({ ...field().state.value, unit });
-                      }}
-                      onEnabledChange={(enabled) => {
-                        field().handleChange({
-                          ...field().state.value,
-                          enabled,
-                        });
-                      }}
-                      description="Allows a stale response to be served while a background revalidation occurs."
-                      disabled={isNoStore()}
-                    />
-                  </div>
-                )}
-              </form.Field>
-
-              {formState().values.staleWhileRevalidate.enabled && (
-                <Alert variant="warning" class="mt-2">
-                  <AlertTitle>Support Information:</AlertTitle>
-                  <AlertDescription>
-                    <ul class="list-disc space-y-1 pl-4">
-                      <li>
-                        <strong>CDNs:</strong> Cloudflare (Enterprise plan),
-                        Fastly (full support), Akamai (full support)
-                      </li>
-                      <li>
-                        <strong>Not supported natively:</strong> AWS CloudFront
-                        (requires Lambda@Edge)
-                      </li>
-                      <li>
-                        <strong>Browsers:</strong> Chrome, Firefox, Edge support
-                        it; Safari has limited support
-                      </li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* {staleWhileRevalidateExceedsYear() && (
-                <Alert variant="warning" class="mt-2">
-                  <AlertTitle>Warning:</AlertTitle>
-                  <AlertDescription>
-                    You've set a very long stale-while-revalidate value (over 1
-                    year). This may lead to very outdated content being served.
-                  </AlertDescription>
-                </Alert>
-              )} */}
+              </div>
             </div>
 
             <div class="border-border mt-2 space-y-3 border-t pt-2">
-              <form.Field name="staleIfError">
-                {(field) => (
-                  <div>
-                    <TimeInput
-                      label="Stale If Error"
-                      value={field().state.value.value}
-                      unit={field().state.value.unit}
-                      enabled={field().state.value.enabled}
-                      onValueChange={(value) => {
-                        field().handleChange({ ...field().state.value, value });
-                      }}
-                      onUnitChange={(unit) => {
-                        field().handleChange({ ...field().state.value, unit });
-                      }}
-                      onEnabledChange={(enabled) => {
-                        field().handleChange({
-                          ...field().state.value,
-                          enabled,
-                        });
-                      }}
-                      description="Allows a stale response to be served if the origin server returns an error."
-                      disabled={isNoStore()}
-                    />
-                  </div>
-                )}
-              </form.Field>
+              <h4 class="font-medium text-gray-700 dark:text-gray-300">
+                Advanced Staleness Options
+              </h4>
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <form.Field name="staleWhileRevalidate" validators={{}}>
+                    {(field) => (
+                      <div>
+                        <TimeInput
+                          label="Stale While Revalidate"
+                          value={field().state.value.value}
+                          unit={field().state.value.unit}
+                          enabled={field().state.value.enabled}
+                          onValueChange={(value) => {
+                            field().handleChange({
+                              ...field().state.value,
+                              value,
+                            });
+                          }}
+                          onUnitChange={(unit) => {
+                            field().handleChange({
+                              ...field().state.value,
+                              unit,
+                            });
+                          }}
+                          onEnabledChange={(enabled) => {
+                            field().handleChange({
+                              ...field().state.value,
+                              enabled,
+                            });
+                          }}
+                          description="Allows serving stale content while revalidating in the background. When a cached response becomes stale, it returns the stale response immediately while fetching a fresh copy."
+                          disabled={isNoStore()}
+                        />
+                      </div>
+                    )}
+                  </form.Field>
 
-              {formState().values.staleIfError.enabled && (
-                <Alert variant="warning" class="mt-2">
-                  <AlertTitle>Support Information:</AlertTitle>
-                  <AlertDescription>
-                    <ul class="list-disc space-y-1 pl-4">
-                      <li>
-                        <strong>CDNs:</strong> Cloudflare (Enterprise plan),
-                        Fastly (full support), Akamai (supported)
-                      </li>
-                      <li>
-                        <strong>Not supported:</strong> AWS CloudFront (no
-                        native support)
-                      </li>
-                      <li>
-                        <strong>Browsers:</strong> Limited support (mainly
-                        Chrome)
-                      </li>
-                      <li>
-                        <strong>Varnish:</strong> Available through custom VCL
-                        configuration
-                      </li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
+                  {formState().values.staleWhileRevalidate.enabled && (
+                    <>
+                      <Alert variant="warning" class="mt-2">
+                        <AlertTitle>Support Information:</AlertTitle>
+                        <AlertDescription>
+                          <ul class="list-disc space-y-1 pl-4">
+                            <li>
+                              <strong>CDNs:</strong> Cloudflare (Enterprise),
+                              Fastly, Akamai
+                            </li>
+                            <li>
+                              <strong>Not native:</strong> AWS CloudFront
+                            </li>
+                            <li>
+                              <strong>Browsers:</strong> Chrome, Firefox, Edge;
+                              limited Safari
+                            </li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
 
-              {/* {staleIfErrorExceedsYear() && (
-                <Alert variant="warning" class="mt-2">
-                  <AlertTitle>Warning:</AlertTitle>
-                  <AlertDescription>
-                    You've set a very long stale-if-error value (over 1 year).
-                    This may lead to very outdated content being served during
-                    errors.
-                  </AlertDescription>
-                </Alert>
-              )} */}
+                      <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                        <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
+                          How it works:
+                        </h4>
+                        <p class="text-sm text-blue-700 dark:text-blue-400">
+                          1. Return stale content immediately
+                        </p>
+                        <p class="text-sm text-blue-700 dark:text-blue-400">
+                          2. Fetch fresh version in background
+                        </p>
+                        <p class="text-sm text-blue-700 dark:text-blue-400">
+                          3. Update cache for future requests
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <form.Field name="staleIfError">
+                    {(field) => (
+                      <div>
+                        <TimeInput
+                          label="Stale If Error"
+                          value={field().state.value.value}
+                          unit={field().state.value.unit}
+                          enabled={field().state.value.enabled}
+                          onValueChange={(value) => {
+                            field().handleChange({
+                              ...field().state.value,
+                              value,
+                            });
+                          }}
+                          onUnitChange={(unit) => {
+                            field().handleChange({
+                              ...field().state.value,
+                              unit,
+                            });
+                          }}
+                          onEnabledChange={(enabled) => {
+                            field().handleChange({
+                              ...field().state.value,
+                              enabled,
+                            });
+                          }}
+                          description="Allows serving stale content when server returns errors (5xx), improving reliability during outages."
+                          disabled={isNoStore()}
+                        />
+                      </div>
+                    )}
+                  </form.Field>
+
+                  {formState().values.staleIfError.enabled && (
+                    <>
+                      <Alert variant="warning" class="mt-2">
+                        <AlertTitle>Support Information:</AlertTitle>
+                        <AlertDescription>
+                          <ul class="list-disc space-y-1 pl-4">
+                            <li>
+                              <strong>CDNs:</strong> Cloudflare (Enterprise),
+                              Fastly, Akamai
+                            </li>
+                            <li>
+                              <strong>Not supported:</strong> AWS CloudFront
+                            </li>
+                            <li>
+                              <strong>Browsers:</strong> Limited (mainly Chrome)
+                            </li>
+                          </ul>
+                        </AlertDescription>
+                      </Alert>
+
+                      <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                        <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
+                          How it works:
+                        </h4>
+                        <p class="text-sm text-blue-700 dark:text-blue-400">
+                          Serves stale content when server returns errors (5xx),
+                          improving reliability during outages.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </Card>
         </div>
@@ -1134,19 +1185,29 @@ export const GenerateForm: Component<{
             </p>
             <p>
               • <strong>no-cache</strong> requires revalidation even for fresh
-              responses
+              responses, but still allows storing the response
             </p>
             <p>
               • <strong>s-maxage</strong> only applies to shared caches
               (relevant only for Public cache type)
             </p>
             <p>
-              • <strong>immutable</strong> hints at indefinite caching (HTTP/2+
-              support varies)
+              • <strong>immutable</strong> prevents revalidation on page refresh
+              (HTTP/2+ support varies)
             </p>
             <p>
               • <strong>must-revalidate</strong> requires revalidation when
               stale
+            </p>
+            <p>
+              • <strong>max-age=0</strong> is different from{' '}
+              <strong>no-cache</strong>: max-age=0 makes content immediately
+              stale but doesn't prevent caching
+            </p>
+            <p>
+              • <strong>stale-while-revalidate</strong> and{' '}
+              <strong>stale-if-error</strong> provide grace periods for using
+              stale content
             </p>
           </div>
         </div>

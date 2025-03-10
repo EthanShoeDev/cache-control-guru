@@ -1,0 +1,1 @@
+- Maybe switch to: https://www.solid-ui.com/docs/dark-mode/solid-start

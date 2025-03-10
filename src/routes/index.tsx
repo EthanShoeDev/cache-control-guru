@@ -69,10 +69,10 @@ function RouteComponent() {
   return (
     <main class="container mx-auto max-w-5xl px-4 py-8">
       <div class="space-y-6">
-        <div class="space-y-2 text-center">
+        <div class="space-y-3 text-center">
           <h1 class="text-4xl font-bold tracking-tight">Cache-Control Guru</h1>
           <p class="text-muted-foreground text-xl">
-            Understand and generate Cache-Control headers easily
+            Generate and understand HTTP caching headers easily
           </p>
         </div>
 
@@ -131,44 +131,106 @@ function RouteComponent() {
 
             <div class="space-y-2">
               <h3 class="text-muted-foreground text-sm font-medium">
-                Examples:
+                Common Patterns:
               </h3>
-              <div class="flex flex-wrap gap-2">
+              <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setTextInputHeaderValue('max-age=3600, public')
-                  }
-                >
-                  Public, cacheable for 1 hour
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setTextInputHeaderValue(
-                      'private, no-cache, max-age=0, must-revalidate',
-                    )
-                  }
-                >
-                  Private, always revalidate
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTextInputHeaderValue('no-store')}
-                >
-                  Don't cache at all
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
                   onClick={() =>
                     setTextInputHeaderValue('max-age=31536000, immutable')
                   }
                 >
-                  Static asset (1 year)
+                  <div class="text-left">
+                    <div class="text-sm font-medium">
+                      Static assets (hash filenames)
+                    </div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      max-age=31536000, immutable
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                  onClick={() => setTextInputHeaderValue('no-cache')}
+                >
+                  <div class="text-left">
+                    <div class="text-sm font-medium">HTML pages</div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      no-cache
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                  onClick={() => setTextInputHeaderValue('private, max-age=60')}
+                >
+                  <div class="text-left">
+                    <div class="text-sm font-medium">API responses</div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      private, max-age=60
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                  onClick={() =>
+                    setTextInputHeaderValue(
+                      'private, max-age=0, must-revalidate',
+                    )
+                  }
+                >
+                  <div class="text-left">
+                    <div class="text-sm font-medium">Personalized content</div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      private, max-age=0, must-revalidate
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                  onClick={() =>
+                    setTextInputHeaderValue(
+                      'max-age=60, stale-while-revalidate=3600, stale-if-error=86400',
+                    )
+                  }
+                >
+                  <div class="text-left">
+                    <div class="text-sm font-medium">
+                      Fast updates with fallbacks
+                    </div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      max-age=60, stale-while-revalidate=3600,
+                      stale-if-error=86400
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                  onClick={() => setTextInputHeaderValue('no-store')}
+                >
+                  <div class="text-left">
+                    <div class="text-sm font-medium">Sensitive data</div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      no-store
+                    </div>
+                  </div>
                 </Button>
               </div>
             </div>

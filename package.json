@@ -30,6 +30,7 @@
     "@vercel/analytics": "^1.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "solid-js": "^1.9.5",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",

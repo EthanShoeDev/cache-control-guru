@@ -2,6 +2,7 @@
   "name": "cache-control-guru",
   "description": "A quick and simple website to help generate and explain cache-control headers.",
   "type": "module",
+  "packageManager": "pnpm@10.6.2",
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",

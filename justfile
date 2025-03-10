@@ -3,6 +3,7 @@ default:
 
 install:
     pnpm install
+    pnpm exec playwright install
 
 lint:
     pnpm lint
@@ -21,6 +22,12 @@ knip:
 
 knip-fix-danger:
     pnpm knip:fix:danger
+
+test:
+    pnpm test
+
+test-ui:
+    pnpm test:ui
 
 clean-plan:
     git clean -fxdn

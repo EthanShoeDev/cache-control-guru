@@ -1,17 +1,16 @@
-// Types
+import { z } from 'zod';
+
 type CacheControlDirective = {
   name: string;
-  value?: string;
+  value?: string | number;
   description: string;
   category: 'general' | 'expiration' | 'validation' | 'other';
   type: 'response' | 'request' | 'both';
 };
 
-// Cache-Control directives dictionary with explanations
-export const directives: Record<
-  string,
-  Omit<CacheControlDirective, 'name' | 'value'>
-> = {
+type DirectiveDefinition = Omit<CacheControlDirective, 'name' | 'value'>;
+
+export const directives = {
   public: {
     description:
       'Response can be stored by any cache, including browsers and CDNs.',
@@ -102,457 +101,154 @@ export const directives: Record<
     category: 'other',
     type: 'request',
   },
-};
+} as const satisfies Record<string, DirectiveDefinition>;
 
-// Parse Cache-Control header string into individual directives
-export function parseHeader(headerValue: string): CacheControlDirective[] {
-  if (!headerValue || headerValue.trim() === '') {
-    return [];
+type DirectiveName = keyof typeof directives;
+const isDirective = (directive: string): directive is DirectiveName =>
+  directive in directives;
+
+const numericDirectives = [
+  'max-age',
+  's-maxage',
+  'stale-while-revalidate',
+  'stale-if-error',
+  'min-fresh',
+  'max-stale',
+] as const satisfies DirectiveName[];
+const isNumericDirective = (
+  directive: string,
+): directive is (typeof numericDirectives)[number] =>
+  numericDirectives.includes(directive as (typeof numericDirectives)[number]);
+
+const cacheControlSchema = z.string().transform((header, ctx) => {
+  const directivesArray = parseHeader(header);
+  const errors: string[] = [];
+
+  // Validate directive combinations
+  const names = new Set(directivesArray.map((d) => d.name));
+  if (names.has('no-store') && (names.has('public') || names.has('private'))) {
+    errors.push('no-store cannot be combined with public or private');
+  }
+  if (names.has('public') && names.has('private')) {
+    errors.push('public and private are mutually exclusive');
   }
 
-  // Split by commas and trim whitespace
-  const directiveStrings = headerValue.split(',').map((d) => d.trim());
+  if (errors.length > 0) {
+    errors.forEach((error) => {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+    });
+    return z.NEVER;
+  }
 
-  return directiveStrings.map((directiveStr) => {
-    // Check if directive has a value (contains =)
-    const hasValue = directiveStr.includes('=');
-    let name: string;
-    let value: string | undefined;
+  return directivesArray;
+});
 
-    if (hasValue) {
-      const parts = directiveStr.split('=');
-      name = parts[0]?.trim().toLowerCase() ?? '';
-      value = parts[1]?.trim() ?? '';
-    } else {
-      name = directiveStr.trim().toLowerCase();
-      value = undefined;
-    }
+function parseHeader(headerValue: string): CacheControlDirective[] {
+  if (!headerValue) return [];
 
-    // Get directive info from dictionary or mark as unknown
-    const directiveInfo = directives[name] ?? {
-      description: 'Unknown directive or not standard.',
-      category: 'other',
-      type: 'both',
-    };
+  return headerValue
+    .split(',')
+    .map((d) => d.trim())
+    .filter((directiveStr) => directiveStr.length > 0)
+    .map((directiveStr) => {
+      const [directiveName, directiveValue] = directiveStr
+        .split('=')
+        .map((s) => s.trim());
+      const name = directiveName ?? ''; // Ensure name is a string
 
-    return {
-      name,
-      value,
-      description: directiveInfo.description,
-      category: directiveInfo.category,
-      type: directiveInfo.type,
-    };
-  });
+      const directiveInfo = isDirective(name)
+        ? directives[name]
+        : ({
+            description: 'Unknown directive',
+            category: 'other',
+            type: 'both',
+          } as const);
+
+      const parsedValue = isNumericDirective(name)
+        ? Number(directiveValue)
+        : directiveValue;
+
+      return {
+        name,
+        value: parsedValue,
+        description: directiveInfo.description,
+        category: directiveInfo.category,
+        type: directiveInfo.type,
+      };
+    });
 }
 
-// Validate a Cache-Control header string
-export function validateHeader(headerValue: string): {
-  valid: boolean;
-  error?: string;
-} {
-  if (!headerValue || headerValue.trim() === '') {
-    return { valid: true };
-  }
-
-  // Split by commas and trim whitespace
-  const directiveStrings = headerValue.split(',').map((d) => d.trim());
-
-  // Check for empty directives
-  if (directiveStrings.some((d) => d === '')) {
-    return {
-      valid: false,
-      error: 'Invalid format: Empty directive found (consecutive commas)',
-    };
-  }
-
-  for (const directiveStr of directiveStrings) {
-    if (directiveStr.includes('=')) {
-      const parts = directiveStr.split('=');
-      const name = parts[0]?.trim().toLowerCase() ?? '';
-      const value = parts[1]?.trim() ?? '';
-
-      // Check directive name validity
-      if (!name) {
-        return {
-          valid: false,
-          error: `Invalid directive format: missing name before equals sign in "${directiveStr}"`,
-        };
-      }
-
-      // Check if directive should have a value
-      if (!directives[name]) {
-        continue; // Unknown directive, we'll allow it
-      }
-
-      // For directives that require numeric values
-      if (
-        [
-          'max-age',
-          's-maxage',
-          'stale-while-revalidate',
-          'stale-if-error',
-        ].includes(name)
-      ) {
-        if (!value || isNaN(Number(value))) {
-          return {
-            valid: false,
-            error: `Invalid value for ${name}: must be a number`,
-          };
-        }
-      }
-    } else {
-      const name = directiveStr.trim().toLowerCase();
-
-      // Validation for directives that should have values
-      if (
-        [
-          'max-age',
-          's-maxage',
-          'stale-while-revalidate',
-          'stale-if-error',
-        ].includes(name)
-      ) {
-        return {
-          valid: false,
-          error: `${name} directive requires a numeric value`,
-        };
-      }
+export function parseCacheControlHeader(headerString: string):
+  | {
+      valid: true;
+      directives: CacheControlDirective[];
     }
+  | {
+      valid: false;
+      errors: string[];
+    } {
+  if (!headerString.trim()) {
+    return { valid: true, directives: [] };
   }
 
-  // Check for contradicting directives
-  const directiveNames = directiveStrings.map((d) => {
-    return d.includes('=')
-      ? (d.split('=')[0]?.trim().toLowerCase() ?? '')
-      : d.trim().toLowerCase();
-  });
+  const result = cacheControlSchema.safeParse(headerString);
 
-  if (
-    directiveNames.includes('no-store') &&
-    (directiveNames.includes('public') || directiveNames.includes('private'))
-  ) {
+  if (result.success) {
     return {
-      valid: false,
-      error:
-        'Contradicting directives: no-store cannot be used with public/private',
+      valid: true,
+      directives: result.data,
     };
   }
 
-  if (directiveNames.includes('public') && directiveNames.includes('private')) {
-    return {
-      valid: false,
-      error:
-        'Contradicting directives: public and private cannot be used together',
-    };
-  }
-
-  return { valid: true };
+  return {
+    valid: false,
+    errors: result.error.issues.map((issue) => issue.message),
+  };
 }
 
-// Generate a human-readable explanation of the cache-control header
+// Enhanced explanation generator
 export function generateHeaderExplanation(headerValue: string): string {
-  if (!headerValue || headerValue.trim() === '') {
-    return '';
+  const result = parseCacheControlHeader(headerValue);
+
+  if (!result.valid) {
+    return `Invalid Cache-Control header: ${result.errors.join(', ')}`;
   }
 
-  const parsedDirectives = parseHeader(headerValue);
-  if (parsedDirectives.length === 0) {
-    return 'This Cache-Control header is empty or invalid.';
+  if (!result.directives.length) {
+    return 'No caching directives specified.';
   }
 
-  // Check for specific directives
-  const hasNoStore = parsedDirectives.some((d) => d.name === 'no-store');
-  const hasNoCache = parsedDirectives.some((d) => d.name === 'no-cache');
-  const hasPublic = parsedDirectives.some((d) => d.name === 'public');
-  const hasPrivate = parsedDirectives.some((d) => d.name === 'private');
-  const hasMaxAge = parsedDirectives.some((d) => d.name === 'max-age');
-  const hasMustRevalidate = parsedDirectives.some(
-    (d) => d.name === 'must-revalidate',
-  );
-  const hasImmutable = parsedDirectives.some((d) => d.name === 'immutable');
-  const hasSMaxAge = parsedDirectives.some((d) => d.name === 's-maxage');
-  const hasStaleWhileRevalidate = parsedDirectives.some(
-    (d) => d.name === 'stale-while-revalidate',
-  );
-  const hasStaleIfError = parsedDirectives.some(
-    (d) => d.name === 'stale-if-error',
-  );
+  const explanations = result.directives.map((directive) => {
+    let base = directive.description;
 
-  let explanation = '';
-
-  // Storage and cacheability
-  if (hasNoStore) {
-    return 'This response must not be stored in any cache. It will not be saved by browsers or shared caches like CDNs. This is the most restrictive directive and overrides any other caching directives.';
-  }
-
-  // Determine cacheability scope
-  if (hasPrivate) {
-    explanation =
-      'This response is private and should only be stored in browser caches, not in shared caches like CDNs or proxies. ';
-  } else if (hasPublic) {
-    explanation =
-      'This response can be stored by any cache, including browsers and shared caches like CDNs. ';
-  } else {
-    explanation = 'This response can be cached ';
-  }
-
-  // Add freshness lifetime
-  if (hasMaxAge) {
-    const maxAgeDir = parsedDirectives.find((d) => d.name === 'max-age');
-    if (maxAgeDir?.value) {
-      const seconds = parseInt(maxAgeDir.value, 10);
-      const humanTime = formatTime(seconds);
-
-      if (seconds === 0) {
-        explanation += `but is immediately considered stale. `;
-      } else {
-        explanation += `and will remain fresh for ${humanTime}. `;
-      }
-
-      if (hasSMaxAge) {
-        const sMaxAgeDir = parsedDirectives.find((d) => d.name === 's-maxage');
-        if (sMaxAgeDir?.value) {
-          const sSeconds = parseInt(sMaxAgeDir.value, 10);
-          const sHumanTime = formatTime(sSeconds);
-          explanation += `For shared caches like CDNs, it will remain fresh for ${sHumanTime}. `;
-        }
-      }
+    if (typeof directive.value === 'number') {
+      const humanTime = formatTime(directive.value);
+      base += ` (${humanTime})`;
     }
-  } else if (!hasNoCache) {
-    explanation += `with default freshness lifetime. `;
-  }
 
-  // Add validation behavior
-  if (hasNoCache) {
-    explanation += `Caches must revalidate with the origin server before using this response, even if it's still fresh. `;
-  }
+    return `${directive.name}${directive.value !== undefined ? `=${directive.value.toString()}` : ''}: ${base}`;
+  });
 
-  if (hasMustRevalidate) {
-    explanation += `Once stale, this response must be revalidated with the origin server before being used. `;
-  }
-
-  // Special cases
-  if (hasImmutable) {
-    explanation += `This response will not change during its freshness lifetime, so clients shouldn't revalidate it even when the user refreshes the page. `;
-  }
-
-  if (hasStaleWhileRevalidate) {
-    const swrDir = parsedDirectives.find(
-      (d) => d.name === 'stale-while-revalidate',
-    );
-    if (swrDir?.value) {
-      const seconds = parseInt(swrDir.value, 10);
-      const humanTime = formatTime(seconds);
-      explanation += `After becoming stale, it can still be used for ${humanTime} while a background revalidation occurs. `;
-    }
-  }
-
-  if (hasStaleIfError) {
-    const sieDir = parsedDirectives.find((d) => d.name === 'stale-if-error');
-    if (sieDir?.value) {
-      const seconds = parseInt(sieDir.value, 10);
-      const humanTime = formatTime(seconds);
-      explanation += `If the server returns an error during revalidation, the stale response can be used for ${humanTime}. `;
-    }
-  }
-
-  return explanation.trim();
+  return explanations.join('\n');
 }
 
-// Format time in seconds to a human-readable string
+// Time formatting utility
 function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) {
-    return 'Invalid time value';
-  }
+  if (seconds < 0) return 'invalid';
 
-  if (seconds === 0) {
-    return '0 seconds';
-  }
+  const units = [
+    { value: Math.floor(seconds / 86400), name: 'day' },
+    { value: Math.floor((seconds % 86400) / 3600), name: 'hour' },
+    { value: Math.floor((seconds % 3600) / 60), name: 'minute' },
+    { value: seconds % 60, name: 'second' },
+  ];
 
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-
-  const parts = [];
-
-  if (days > 0) {
-    parts.push(`${String(days)} ${days === 1 ? 'day' : 'days'}`);
-  }
-
-  if (hours > 0) {
-    parts.push(`${String(hours)} ${hours === 1 ? 'hour' : 'hours'}`);
-  }
-
-  if (minutes > 0) {
-    parts.push(`${String(minutes)} ${minutes === 1 ? 'minute' : 'minutes'}`);
-  }
-
-  if (remainingSeconds > 0 || parts.length === 0) {
-    parts.push(
-      `${String(remainingSeconds)} ${remainingSeconds === 1 ? 'second' : 'seconds'}`,
+  const parts = units
+    .filter((unit) => unit.value > 0)
+    .map(
+      (unit) =>
+        `${unit.value.toString()} ${unit.name}${unit.value !== 1 ? 's' : ''}`,
     );
-  }
 
-  return parts.join(', ');
-}
-
-// // Calculate time in seconds based on value and unit
-// function calculateSeconds(
-//   value: number,
-//   unit: 'seconds' | 'minutes' | 'hours' | 'days',
-// ): number {
-//   switch (unit) {
-//     case 'seconds':
-//       return value;
-//     case 'minutes':
-//       return value * 60;
-//     case 'hours':
-//       return value * 3600;
-//     case 'days':
-//       return value * 86400;
-//     default:
-//       return value;
-//   }
-// }
-
-// // Generate a Cache-Control header string based on form values
-// type FormValues = {
-//   cacheability: 'public' | 'private' | 'none';
-//   noStore: boolean;
-//   noCache: boolean;
-//   mustRevalidate: boolean;
-//   proxyRevalidate: boolean;
-//   maxAge: {
-//     value: number;
-//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
-//     enabled: boolean;
-//   };
-//   sMaxAge: {
-//     value: number;
-//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
-//     enabled: boolean;
-//   };
-//   staleWhileRevalidate: {
-//     value: number;
-//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
-//     enabled: boolean;
-//   };
-//   staleIfError: {
-//     value: number;
-//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
-//     enabled: boolean;
-//   };
-//   noTransform: boolean;
-//   immutable: boolean;
-// };
-
-// function generateHeader(formValues: FormValues): string {
-//   const directives: string[] = [];
-
-//   // Cacheability directives
-//   if (formValues.cacheability === 'public') {
-//     directives.push('public');
-//   } else if (formValues.cacheability === 'private') {
-//     directives.push('private');
-//   }
-
-//   // Storage directives
-//   if (formValues.noStore) {
-//     directives.push('no-store');
-//   }
-
-//   if (formValues.noCache) {
-//     directives.push('no-cache');
-//   }
-
-//   // Validation directives
-//   if (formValues.mustRevalidate) {
-//     directives.push('must-revalidate');
-//   }
-
-//   if (formValues.proxyRevalidate) {
-//     directives.push('proxy-revalidate');
-//   }
-
-//   // Expiration directives
-//   if (formValues.maxAge.enabled && formValues.maxAge.value >= 0) {
-//     const seconds = calculateSeconds(
-//       formValues.maxAge.value,
-//       formValues.maxAge.unit,
-//     );
-//     directives.push(`max-age=${String(seconds)}`);
-//   }
-
-//   if (formValues.sMaxAge.enabled && formValues.sMaxAge.value >= 0) {
-//     const seconds = calculateSeconds(
-//       formValues.sMaxAge.value,
-//       formValues.sMaxAge.unit,
-//     );
-//     directives.push(`s-maxage=${String(seconds)}`);
-//   }
-
-//   if (
-//     formValues.staleWhileRevalidate.enabled &&
-//     formValues.staleWhileRevalidate.value >= 0
-//   ) {
-//     const seconds = calculateSeconds(
-//       formValues.staleWhileRevalidate.value,
-//       formValues.staleWhileRevalidate.unit,
-//     );
-//     directives.push(`stale-while-revalidate=${String(seconds)}`);
-//   }
-
-//   if (formValues.staleIfError.enabled && formValues.staleIfError.value >= 0) {
-//     const seconds = calculateSeconds(
-//       formValues.staleIfError.value,
-//       formValues.staleIfError.unit,
-//     );
-//     directives.push(`stale-if-error=${String(seconds)}`);
-//   }
-
-//   // Other directives
-//   if (formValues.noTransform) {
-//     directives.push('no-transform');
-//   }
-
-//   if (formValues.immutable) {
-//     directives.push('immutable');
-//   }
-
-//   return directives.join(', ');
-// }
-
-// Enhance explanation with time formatting and contextual information
-export function enhanceExplanation(directive: CacheControlDirective): string {
-  let explanation = directive.description;
-
-  // Add time context for directives with seconds
-  if (
-    directive.name === 'max-age' ||
-    directive.name === 's-maxage' ||
-    directive.name === 'stale-while-revalidate' ||
-    directive.name === 'stale-if-error' ||
-    directive.name === 'min-fresh' ||
-    directive.name === 'max-stale'
-  ) {
-    if (directive.value && !isNaN(Number(directive.value))) {
-      const seconds = parseInt(directive.value, 10);
-      const humanTime = formatTime(seconds);
-      explanation += ` In this case, the value is ${String(seconds)} seconds (${humanTime}).`;
-    }
-  }
-
-  // Add interaction notes for certain directives
-  if (directive.name === 'no-store' && directive.value === undefined) {
-    explanation +=
-      ' This is the most restrictive caching directive and overrides other caching directives.';
-  }
-
-  if (directive.name === 'immutable' && directive.value === undefined) {
-    explanation +=
-      ' Note: This directive is only supported in HTTP/2 and newer, and has limited browser support.';
-  }
-
-  return explanation;
+  return parts.length ? parts.join(', ') : '0 seconds';
 }

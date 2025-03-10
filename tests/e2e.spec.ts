@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('has title and checkboxes', async ({ page }) => {
   await page.goto('/');
@@ -7,4 +7,3 @@ test('has title and checkboxes', async ({ page }) => {
 
   expect(await page.getByRole('checkbox').count()).toBeGreaterThan(0);
 });
-

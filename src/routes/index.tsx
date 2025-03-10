@@ -3,17 +3,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
-  enhanceExplanation,
   generateHeaderExplanation,
-  parseHeader,
-  validateHeader,
+  parseCacheControlHeader,
 } from '@/lib/cache-control';
+import { narrow } from '@/lib/utils';
 import { debounce } from '@solid-primitives/scheduled';
 import { createFileRoute } from '@tanstack/solid-router';
 import { fallback, zodValidator } from '@tanstack/zod-adapter';
 import {
   type Accessor,
-  For,
   Show,
   createEffect,
   createMemo,
@@ -54,8 +52,8 @@ function RouteComponent() {
       debouncedSearchParamUpdate({ header: headerVal });
   });
 
-  const headerValidation = createMemo(() =>
-    validateHeader(textInputHeaderValue()),
+  const headerParseResult = createMemo(() =>
+    parseCacheControlHeader(textInputHeaderValue()),
   );
 
   return (
@@ -105,22 +103,19 @@ function RouteComponent() {
                 />
               </div>
 
-              <Show
-                when={
-                  !headerValidation().valid &&
-                  textInputHeaderValue().trim() !== ''
-                }
-              >
-                <Alert variant="destructive">
-                  <AlertTitle>Invalid Header</AlertTitle>
-                  <AlertDescription>
-                    {headerValidation().error}
-                    <p class="mt-1 text-sm">
-                      A browser would ignore this header or apply only the valid
-                      parts.
-                    </p>
-                  </AlertDescription>
-                </Alert>
+              <Show when={narrow(headerParseResult, (r) => !r.valid)}>
+                {(invalidResult) => (
+                  <Alert variant="destructive">
+                    <AlertTitle>Invalid Header</AlertTitle>
+                    <AlertDescription>
+                      {invalidResult().errors.join(', ')}
+                      <p class="mt-1 text-sm">
+                        A browser would ignore this header or apply only the
+                        valid parts.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
               </Show>
             </div>
 
@@ -185,50 +180,11 @@ function RouteComponent() {
                 <h2 class="mb-4 text-xl font-semibold">Header Explanation</h2>
                 <Card class="p-4">
                   <p class="text-base">
-                    {headerValidation().valid
+                    {headerParseResult().valid
                       ? generateHeaderExplanation(textInputHeaderValue())
                       : 'This Cache-Control header is invalid. Please correct the errors shown above.'}
                   </p>
                 </Card>
-
-                <Show
-                  when={
-                    headerValidation().valid &&
-                    parseHeader(textInputHeaderValue()).length > 0
-                  }
-                >
-                  <details class="mt-4">
-                    <summary class="text-muted-foreground hover:text-foreground cursor-pointer text-sm">
-                      View detailed directive explanations
-                    </summary>
-                    <div class="mt-4 space-y-4">
-                      <For each={parseHeader(textInputHeaderValue())}>
-                        {(directive) => (
-                          <Card class="p-4">
-                            <h4 class="text-md flex items-center gap-1.5 font-medium">
-                              <span class="bg-muted rounded px-1.5 py-0.5 font-mono text-sm">
-                                {directive.name}
-                                {directive.value !== undefined
-                                  ? `=${directive.value}`
-                                  : ''}
-                              </span>
-                              <span class="text-muted-foreground text-xs">
-                                (
-                                {directive.type === 'both'
-                                  ? 'request & response'
-                                  : directive.type}{' '}
-                                directive)
-                              </span>
-                            </h4>
-                            <p class="mt-2 text-sm">
-                              {enhanceExplanation(directive)}
-                            </p>
-                          </Card>
-                        )}
-                      </For>
-                    </div>
-                  </details>
-                </Show>
               </div>
             </Show>
           </div>

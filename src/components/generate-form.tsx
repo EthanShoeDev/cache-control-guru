@@ -12,7 +12,7 @@ import {
   CheckboxLabel,
 } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { directives } from '@/lib/cache-control';
+import { directives, parseCacheControlHeader } from '@/lib/cache-control';
 import { cn } from '@/lib/utils';
 import { createForm, formOptions } from '@tanstack/solid-form';
 import { createEffect, type Component } from 'solid-js';
@@ -137,6 +137,13 @@ const formSchemaToHeaderString = (values: FormSchema) => {
   return directives.join(', ');
 };
 
+const headerStringToFormSchema = (headerString: string): FormSchema => {
+  const directives = parseCacheControlHeader(headerString);
+  // TODO: Implement
+  console.log(directives);
+  return formOpts.defaultValues;
+};
+
 const ONE_YEAR_IN_SECONDS = 31536000; // 365 days
 
 export const GenerateForm: Component<{
@@ -144,8 +151,6 @@ export const GenerateForm: Component<{
   setTextInputHeaderValue: (value: string) => void;
   class?: string;
 }> = (props) => {
-  // let updatingFromInput = false;
-
   const form = createForm(() => ({
     ...formOpts,
   }));
@@ -157,6 +162,18 @@ export const GenerateForm: Component<{
     props.setTextInputHeaderValue(formSchemaToHeaderString(formState().values));
   });
 
+  createEffect(() => {
+    // I am not sure if this effect should be combinded with the above effect
+    const headerString = props.textInputHeaderValue;
+    if (!headerString) return;
+    const formValues = formState().values;
+    const formGeneratedHeader = formSchemaToHeaderString(formValues);
+    if (formGeneratedHeader === headerString) return;
+    const formSchema = headerStringToFormSchema(headerString);
+    form.reset(formSchema);
+  });
+
+  // Old code for reference
   // createEffect(() => {
   //   // const headerValue = props.headerValue;
 
@@ -476,9 +493,7 @@ export const GenerateForm: Component<{
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">
-                            {directives.public?.description}
-                          </p>
+                          <p class="text-sm">{directives.public.description}</p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Suitable for content that can be shared among
                             multiple users, such as static images or CSS files.
@@ -504,7 +519,7 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives.private?.description}
+                            {directives.private.description}
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Use this for personalized content or data that
@@ -531,7 +546,7 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives['no-store']?.description}
+                            {directives['no-store'].description}
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Ensures that no part of the response is cached,
@@ -576,7 +591,7 @@ export const GenerateForm: Component<{
                     onEnabledChange={(enabled) => {
                       field().handleChange({ ...field().state.value, enabled });
                     }}
-                    description={`${directives['max-age']?.description ?? ''} After this time, the cache must revalidate the response with the server.`}
+                    description={`${directives['max-age'].description} After this time, the cache must revalidate the response with the server.`}
                     disabled={isNoStore()}
                   />
                   {field().state.meta.errors.join(', ') && (
@@ -608,7 +623,7 @@ export const GenerateForm: Component<{
                     onEnabledChange={(enabled) => {
                       field().handleChange({ ...field().state.value, enabled });
                     }}
-                    description={`${directives['s-maxage']?.description ?? ''} Allows setting a different freshness duration for shared caches like CDNs.`}
+                    description={`${directives['s-maxage'].description} Allows setting a different freshness duration for shared caches like CDNs.`}
                     disabled={
                       isNoStore() || formState().values.cacheType === 'private'
                     }
@@ -657,7 +672,7 @@ export const GenerateForm: Component<{
               </form.Field>
 
               <p class="text-muted-foreground text-sm">
-                {directives.immutable?.description} Best for versioned static
+                {directives.immutable.description} Best for versioned static
                 assets with hashed filenames that never change.
               </p>
 
@@ -744,7 +759,7 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives['no-cache']?.description}
+                            {directives['no-cache'].description}
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Forces revalidation even for fresh responses,
@@ -790,7 +805,7 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        {directives['must-revalidate']?.description}
+                        {directives['must-revalidate'].description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                         Ensures that stale responses are not used without
@@ -827,7 +842,7 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        {directives['proxy-revalidate']?.description}
+                        {directives['proxy-revalidate'].description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                         Allows private caches to serve stale responses while
@@ -1001,7 +1016,7 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        {directives['no-transform']?.description}
+                        {directives['no-transform'].description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                         Ensures content integrity by preventing proxies from

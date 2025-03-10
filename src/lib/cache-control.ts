@@ -145,6 +145,220 @@ export function parseHeader(headerValue: string): CacheControlDirective[] {
   });
 }
 
+// Validate a Cache-Control header string
+export function validateHeader(headerValue: string): {
+  valid: boolean;
+  error?: string;
+} {
+  if (!headerValue || headerValue.trim() === '') {
+    return { valid: true };
+  }
+
+  // Split by commas and trim whitespace
+  const directiveStrings = headerValue.split(',').map((d) => d.trim());
+
+  // Check for empty directives
+  if (directiveStrings.some((d) => d === '')) {
+    return {
+      valid: false,
+      error: 'Invalid format: Empty directive found (consecutive commas)',
+    };
+  }
+
+  for (const directiveStr of directiveStrings) {
+    if (directiveStr.includes('=')) {
+      const parts = directiveStr.split('=');
+      const name = parts[0].trim().toLowerCase();
+      const value = parts[1].trim();
+
+      // Check directive name validity
+      if (!name) {
+        return {
+          valid: false,
+          error: `Invalid directive format: missing name before equals sign in "${directiveStr}"`,
+        };
+      }
+
+      // Check if directive should have a value
+      if (!directives[name]) {
+        continue; // Unknown directive, we'll allow it
+      }
+
+      // For directives that require numeric values
+      if (
+        [
+          'max-age',
+          's-maxage',
+          'stale-while-revalidate',
+          'stale-if-error',
+        ].includes(name)
+      ) {
+        if (!value || isNaN(Number(value))) {
+          return {
+            valid: false,
+            error: `Invalid value for ${name}: must be a number`,
+          };
+        }
+      }
+    } else {
+      const name = directiveStr.trim().toLowerCase();
+
+      // Validation for directives that should have values
+      if (
+        [
+          'max-age',
+          's-maxage',
+          'stale-while-revalidate',
+          'stale-if-error',
+        ].includes(name)
+      ) {
+        return {
+          valid: false,
+          error: `${name} directive requires a numeric value`,
+        };
+      }
+    }
+  }
+
+  // Check for contradicting directives
+  const directiveNames = directiveStrings.map((d) => {
+    return d.includes('=')
+      ? d.split('=')[0].trim().toLowerCase()
+      : d.trim().toLowerCase();
+  });
+
+  if (
+    directiveNames.includes('no-store') &&
+    (directiveNames.includes('public') || directiveNames.includes('private'))
+  ) {
+    return {
+      valid: false,
+      error:
+        'Contradicting directives: no-store cannot be used with public/private',
+    };
+  }
+
+  if (directiveNames.includes('public') && directiveNames.includes('private')) {
+    return {
+      valid: false,
+      error:
+        'Contradicting directives: public and private cannot be used together',
+    };
+  }
+
+  return { valid: true };
+}
+
+// Generate a human-readable explanation of the cache-control header
+export function generateHeaderExplanation(headerValue: string): string {
+  if (!headerValue || headerValue.trim() === '') {
+    return '';
+  }
+
+  const parsedDirectives = parseHeader(headerValue);
+  if (parsedDirectives.length === 0) {
+    return 'This Cache-Control header is empty or invalid.';
+  }
+
+  // Check for specific directives
+  const hasNoStore = parsedDirectives.some((d) => d.name === 'no-store');
+  const hasNoCache = parsedDirectives.some((d) => d.name === 'no-cache');
+  const hasPublic = parsedDirectives.some((d) => d.name === 'public');
+  const hasPrivate = parsedDirectives.some((d) => d.name === 'private');
+  const hasMaxAge = parsedDirectives.some((d) => d.name === 'max-age');
+  const hasMustRevalidate = parsedDirectives.some(
+    (d) => d.name === 'must-revalidate',
+  );
+  const hasImmutable = parsedDirectives.some((d) => d.name === 'immutable');
+  const hasSMaxAge = parsedDirectives.some((d) => d.name === 's-maxage');
+  const hasStaleWhileRevalidate = parsedDirectives.some(
+    (d) => d.name === 'stale-while-revalidate',
+  );
+  const hasStaleIfError = parsedDirectives.some(
+    (d) => d.name === 'stale-if-error',
+  );
+
+  let explanation = '';
+
+  // Storage and cacheability
+  if (hasNoStore) {
+    return 'This response must not be stored in any cache. It will not be saved by browsers or shared caches like CDNs. This is the most restrictive directive and overrides any other caching directives.';
+  }
+
+  // Determine cacheability scope
+  if (hasPrivate) {
+    explanation =
+      'This response is private and should only be stored in browser caches, not in shared caches like CDNs or proxies. ';
+  } else if (hasPublic) {
+    explanation =
+      'This response can be stored by any cache, including browsers and shared caches like CDNs. ';
+  } else {
+    explanation = 'This response can be cached ';
+  }
+
+  // Add freshness lifetime
+  if (hasMaxAge) {
+    const maxAgeDir = parsedDirectives.find((d) => d.name === 'max-age');
+    if (maxAgeDir?.value) {
+      const seconds = parseInt(maxAgeDir.value, 10);
+      const humanTime = formatTime(seconds);
+
+      if (seconds === 0) {
+        explanation += `but is immediately considered stale. `;
+      } else {
+        explanation += `and will remain fresh for ${humanTime}. `;
+      }
+
+      if (hasSMaxAge) {
+        const sMaxAgeDir = parsedDirectives.find((d) => d.name === 's-maxage');
+        if (sMaxAgeDir?.value) {
+          const sSeconds = parseInt(sMaxAgeDir.value, 10);
+          const sHumanTime = formatTime(sSeconds);
+          explanation += `For shared caches like CDNs, it will remain fresh for ${sHumanTime}. `;
+        }
+      }
+    }
+  } else if (!hasNoCache) {
+    explanation += `with default freshness lifetime. `;
+  }
+
+  // Add validation behavior
+  if (hasNoCache) {
+    explanation += `Caches must revalidate with the origin server before using this response, even if it's still fresh. `;
+  }
+
+  if (hasMustRevalidate) {
+    explanation += `Once stale, this response must be revalidated with the origin server before being used. `;
+  }
+
+  // Special cases
+  if (hasImmutable) {
+    explanation += `This response will not change during its freshness lifetime, so clients shouldn't revalidate it even when the user refreshes the page. `;
+  }
+
+  if (hasStaleWhileRevalidate) {
+    const swrDir = parsedDirectives.find(
+      (d) => d.name === 'stale-while-revalidate',
+    );
+    if (swrDir?.value) {
+      const seconds = parseInt(swrDir.value, 10);
+      const humanTime = formatTime(seconds);
+      explanation += `After becoming stale, it can still be used for ${humanTime} while a background revalidation occurs. `;
+    }
+  }
+
+  if (hasStaleIfError) {
+    const sieDir = parsedDirectives.find((d) => d.name === 'stale-if-error');
+    if (sieDir?.value) {
+      const seconds = parseInt(sieDir.value, 10);
+      const humanTime = formatTime(seconds);
+      explanation += `If the server returns an error during revalidation, the stale response can be used for ${humanTime}. `;
+    }
+  }
+
+  return explanation.trim();
+}
+
 // Format time in seconds to a human-readable string
 export function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) {

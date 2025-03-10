@@ -51,3 +51,7 @@ For example what would happen if the NavBar were within the suspense?
 In regards to the dark mode docs for shadcn solid, should the ColorModeScript go in or outside the suspense? Why are why not? How does import { MetaProvider } from "@solidjs/meta"; relate? Where should it go and why?
 
 So many questions
+
+
+
+The answer to the above questions is, anything that should be a a dynamic import should go under the suspense. If it is in the _root.tsx route, it will be SSR on the server so there will be no lazy load on the client. The lazy loading happens on the server.

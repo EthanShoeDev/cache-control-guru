@@ -189,6 +189,7 @@ validateSearch: productSearchSchema,
 
 const ProductList = () => {
 return (
+
 <div>
 <Link
 from={allProductsRoute.fullPath}
@@ -208,6 +209,7 @@ tsx
 // `page` is a search param that is defined in the \_\_root route and hence available on all routes.
 const PageSelector = () => {
 return (
+
 <div>
 <Link to="." search={(prev) => ({ ...prev, page: prev.page + 1 })}>
 Next Page
@@ -222,6 +224,7 @@ tsx
 // `page` is a search param that is defined in the /posts route and hence available on all of its child routes.
 const PageSelector = () => {
 return (
+
 <div>
 <Link
 from="/posts"
@@ -245,6 +248,7 @@ const ProductList = () => {
 const navigate = useNavigate({ from: Route.fullPath })
 
 return (
+
 <div>
 <button
 onClick={() => {
@@ -373,6 +377,7 @@ const fib = () => fibonacci(count());
 return (
 <>
 <button onClick={() => setCount(count() + 1)}>Count: {count()}</button>
+
 <div>1. {fib()} {fib()} {fib()} {fib()} {fib()}</div>
 <div>2. {fib()} {fib()} {fib()} {fib()} {fib()}</div>
 <div>3. {fib()} {fib()} {fib()} {fib()} {fib()}</div>
@@ -414,6 +419,7 @@ setPhotos(await res.json());
 });
 
 return <>
+
 <h1>Photo album</h1>
 
     <div class="photos">
@@ -509,6 +515,7 @@ if (todo) todo.setCompleted(!todo.completed())
 
 return (
 <>
+
 <div>
 <input ref={input} />
 <button
@@ -589,6 +596,7 @@ setTodos(todo => todo.id === id, "completed", completed => !completed);
 
 return (
 <>
+
 <div>
 <input ref={input} />
 <button

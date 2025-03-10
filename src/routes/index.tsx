@@ -236,8 +236,8 @@ function RouteComponent() {
           <div class="border-border border-t pt-6">
             <h2 class="mb-4 text-xl font-semibold">Configure Options</h2>
             <GenerateForm
-              headerValue={textInputHeaderValue()}
-              onGenerate={setTextInputHeaderValue}
+              textInputHeaderValue={textInputHeaderValue()}
+              setTextInputHeaderValue={setTextInputHeaderValue}
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { TimeInput, type TimeUnit } from '@/components/time-input';
+import { convertTimeUnitToSeconds, TimeInput, type TimeUnit } from '@/components/time-input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { directives } from '@/lib/cache-control';
 import { cn } from '@/lib/utils';
 import { createForm, formOptions } from '@tanstack/solid-form';
-import { type Component } from 'solid-js';
+import { createEffect, type Component } from 'solid-js';
 
 type TimeDirective = {
   enabled: boolean;
@@ -30,55 +30,40 @@ type FormSchema = {
   sMaxAge: TimeDirective;
   staleWhileRevalidate: TimeDirective;
   staleIfError: TimeDirective;
-  // headerText: string;
-};
-
-const defaultFormOptions: FormSchema = {
-  cacheType: 'public',
-  freshBehavior: 'default',
-  mustRevalidate: false,
-  proxyRevalidate: false,
-  immutable: false,
-  noTransform: false,
-  maxAge: {
-    enabled: false,
-    value: 3600,
-    unit: 'seconds' as TimeUnit,
-  },
-  sMaxAge: {
-    enabled: false,
-    value: 3600,
-    unit: 'seconds' as TimeUnit,
-  },
-  staleWhileRevalidate: {
-    enabled: false,
-    value: 60,
-    unit: 'seconds' as TimeUnit,
-  },
-  staleIfError: {
-    enabled: false,
-    value: 300,
-    unit: 'seconds' as TimeUnit,
-  },
-  // headerText: '',
 };
 
 const formOpts = formOptions({
-  defaultValues: defaultFormOptions,
+  defaultValues: {
+    cacheType: 'public',
+    freshBehavior: 'default',
+    mustRevalidate: false,
+    proxyRevalidate: false,
+    immutable: false,
+    noTransform: false,
+    maxAge: {
+      enabled: false,
+      value: 3600,
+      unit: 'seconds' as TimeUnit,
+    },
+    sMaxAge: {
+      enabled: false,
+      value: 3600,
+      unit: 'seconds' as TimeUnit,
+    },
+    staleWhileRevalidate: {
+      enabled: false,
+      value: 60,
+      unit: 'seconds' as TimeUnit,
+    },
+    staleIfError: {
+      enabled: false,
+      value: 300,
+      unit: 'seconds' as TimeUnit,
+    },
+  } as FormSchema,
 });
 
-const convertToSeconds = (value: number, unit: TimeUnit): number => {
-  switch (unit) {
-    case 'minutes':
-      return value * 60;
-    case 'hours':
-      return value * 60 * 60;
-    case 'days':
-      return value * 60 * 60 * 24;
-    default:
-      return value;
-  }
-};
+
 
 // const parseSeconds = (seconds: number): { value: number; unit: TimeUnit } => {
 //   if (seconds % (60 * 60 * 24) === 0 && seconds >= 60 * 60 * 24) {
@@ -93,11 +78,50 @@ const convertToSeconds = (value: number, unit: TimeUnit): number => {
 //   return { value: seconds, unit: 'seconds' };
 // };
 
+const formSchemaToHeaderString = (values: FormSchema) => {
+  const directives = [];
+
+  if(values.cacheType === 'no-store') directives.push('no-store');
+  if(values.cacheType === 'private') directives.push('private');
+  if(values.cacheType === 'public') directives.push('public');
+
+  if(values.freshBehavior === 'no-cache') directives.push('no-cache');
+
+  if(values.mustRevalidate) directives.push('must-revalidate');
+  if(values.proxyRevalidate && values.cacheType === 'public') directives.push('proxy-revalidate');
+  if(values.immutable) directives.push('immutable');
+
+  if(values.maxAge.enabled && values.cacheType !== 'no-store') {
+    const maxAgeSecs = convertTimeUnitToSeconds(values.maxAge.value, values.maxAge.unit);
+    directives.push(`max-age=${maxAgeSecs}`);
+  }
+
+  if(values.sMaxAge.enabled && values.cacheType !== 'no-store' && values.cacheType === 'public') {
+    const sMaxAgeSecs = convertTimeUnitToSeconds(values.sMaxAge.value, values.sMaxAge.unit);
+    directives.push(`s-maxage=${sMaxAgeSecs}`);
+  }
+  
+  if(values.noTransform) directives.push('no-transform');
+
+  if(values.staleWhileRevalidate.enabled && values.cacheType !== 'no-store') {
+    const staleWhileRevalidateSecs = convertTimeUnitToSeconds(values.staleWhileRevalidate.value, values.staleWhileRevalidate.unit);
+    directives.push(`stale-while-revalidate=${staleWhileRevalidateSecs}`);
+  }
+  
+  if(values.staleIfError.enabled && values.cacheType !== 'no-store') {
+    const staleIfErrorSecs = convertTimeUnitToSeconds(values.staleIfError.value, values.staleIfError.unit);
+    directives.push(`stale-if-error=${staleIfErrorSecs}`);
+  }
+  
+  return directives.join(', ');
+}
+
+
 const ONE_YEAR_IN_SECONDS = 31536000; // 365 days
 
 export const GenerateForm: Component<{
-  headerValue: string;
-  onGenerate: (headerValue: string) => void;
+  textInputHeaderValue: string;
+  setTextInputHeaderValue: (value: string) => void;
   class?: string;
 }> = (props) => {
   // let updatingFromInput = false;
@@ -107,6 +131,11 @@ export const GenerateForm: Component<{
   }));
 
   const formState = form.useStore();
+
+  createEffect(() => {
+    if(!formState().isValid) return;
+    props.setTextInputHeaderValue(formSchemaToHeaderString(formState().values))
+  })
 
   // createEffect(() => {
   //   // const headerValue = props.headerValue;
@@ -357,7 +386,7 @@ export const GenerateForm: Component<{
 
   const ageDirectiveValidators = (value: TimeDirective) => {
     if (!value.enabled) return;
-    const seconds = convertToSeconds(value.value, value.unit);
+    const seconds = convertTimeUnitToSeconds(value.value, value.unit);
     if (seconds > ONE_YEAR_IN_SECONDS)
       return `According to RFC 2616: To mark a response as "never expires," an origin server sends an
    Expires date approximately one year from the time the response is
@@ -981,7 +1010,7 @@ export const GenerateForm: Component<{
           <Button
             variant="outline"
             onClick={() => {
-              form.reset(defaultFormOptions);
+              form.reset(formOpts.defaultValues);
             }}
             class="text-sm"
           >

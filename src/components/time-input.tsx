@@ -21,6 +21,19 @@ type TimeInputProps = {
   disabled?: boolean;
 };
 
+export const convertTimeUnitToSeconds = (value: number, unit: TimeUnit): number => {
+  switch (unit) {
+    case 'minutes':
+      return value * 60;
+    case 'hours':
+      return value * 60 * 60;
+    case 'days':
+      return value * 60 * 60 * 24;
+    default:
+      return value;
+  }
+};
+
 export const TimeInput: Component<TimeInputProps> = (props) => {
   const [focused, setFocused] = createSignal(false);
 

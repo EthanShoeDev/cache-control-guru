@@ -8,40 +8,20 @@ import {
   CheckboxLabel,
 } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { directives, parseHeader, validateHeader } from '@/lib/cache-control';
+import { directives } from '@/lib/cache-control';
 import { cn } from '@/lib/utils';
-import { createForm } from '@tanstack/solid-form';
-import { type Component, createEffect, Show } from 'solid-js';
-import { z } from 'zod';
-
-// SectionDescription component for section headers
-const SectionDescription: Component<{ title: string; description: string }> = (
-  props,
-) => {
-  return (
-    <div class="mb-3">
-      <h3 class="text-primary text-lg font-medium">{props.title}</h3>
-      <p class="text-muted-foreground mt-1 text-sm">{props.description}</p>
-    </div>
-  );
-};
-
-interface GenerateFormProps {
-  headerValue: string;
-  onGenerate: (headerValue: string) => void;
-  class?: string;
-}
+import { createForm, formOptions } from '@tanstack/solid-form';
+import { type Component } from 'solid-js';
 
 type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
-interface TimeDirective {
+type TimeDirective = {
   enabled: boolean;
   value: number;
   unit: TimeUnit;
-}
+};
 
-// Form schema
-interface FormValues {
+type FormSchema = {
   cacheType: 'public' | 'private' | 'no-store';
   freshBehavior: 'default' | 'no-cache';
   mustRevalidate: boolean;
@@ -52,10 +32,43 @@ interface FormValues {
   sMaxAge: TimeDirective;
   staleWhileRevalidate: TimeDirective;
   staleIfError: TimeDirective;
-  headerText: string;
-}
+  // headerText: string;
+};
 
-// Helper function to convert time to seconds
+const defaultFormOptions: FormSchema = {
+  cacheType: 'public',
+  freshBehavior: 'default',
+  mustRevalidate: false,
+  proxyRevalidate: false,
+  immutable: false,
+  noTransform: false,
+  maxAge: {
+    enabled: false,
+    value: 3600,
+    unit: 'seconds' as TimeUnit,
+  },
+  sMaxAge: {
+    enabled: false,
+    value: 3600,
+    unit: 'seconds' as TimeUnit,
+  },
+  staleWhileRevalidate: {
+    enabled: false,
+    value: 60,
+    unit: 'seconds' as TimeUnit,
+  },
+  staleIfError: {
+    enabled: false,
+    value: 300,
+    unit: 'seconds' as TimeUnit,
+  },
+  // headerText: '',
+};
+
+const formOpts = formOptions({
+  defaultValues: defaultFormOptions,
+});
+
 const convertToSeconds = (value: number, unit: TimeUnit): number => {
   switch (unit) {
     case 'minutes':
@@ -69,317 +82,300 @@ const convertToSeconds = (value: number, unit: TimeUnit): number => {
   }
 };
 
-// Helper function to parse seconds to a unit and value
-const parseSeconds = (seconds: number): { value: number; unit: TimeUnit } => {
-  if (seconds % (60 * 60 * 24) === 0 && seconds >= 60 * 60 * 24) {
-    return { value: seconds / (60 * 60 * 24), unit: 'days' };
-  }
-  if (seconds % (60 * 60) === 0 && seconds >= 60 * 60) {
-    return { value: seconds / (60 * 60), unit: 'hours' };
-  }
-  if (seconds % 60 === 0 && seconds >= 60) {
-    return { value: seconds / 60, unit: 'minutes' };
-  }
-  return { value: seconds, unit: 'seconds' };
-};
+// const parseSeconds = (seconds: number): { value: number; unit: TimeUnit } => {
+//   if (seconds % (60 * 60 * 24) === 0 && seconds >= 60 * 60 * 24) {
+//     return { value: seconds / (60 * 60 * 24), unit: 'days' };
+//   }
+//   if (seconds % (60 * 60) === 0 && seconds >= 60 * 60) {
+//     return { value: seconds / (60 * 60), unit: 'hours' };
+//   }
+//   if (seconds % 60 === 0 && seconds >= 60) {
+//     return { value: seconds / 60, unit: 'minutes' };
+//   }
+//   return { value: seconds, unit: 'seconds' };
+// };
 
-// Constants for warnings
 const ONE_YEAR_IN_SECONDS = 31536000; // 365 days
 
-export const GenerateForm: Component<GenerateFormProps> = (props) => {
-  // Track if we're currently updating from external header input
-  let updatingFromInput = false;
+export const GenerateForm: Component<{
+  headerValue: string;
+  onGenerate: (headerValue: string) => void;
+  class?: string;
+}> = (props) => {
+  // let updatingFromInput = false;
 
-  // Create a reference to default values
-  const defaultValues = {
-    cacheType: 'public',
-    freshBehavior: 'default',
-    mustRevalidate: false,
-    proxyRevalidate: false,
-    immutable: false,
-    noTransform: false,
-    maxAge: {
-      enabled: false,
-      value: 3600,
-      unit: 'seconds' as TimeUnit,
-    },
-    sMaxAge: {
-      enabled: false,
-      value: 3600,
-      unit: 'seconds' as TimeUnit,
-    },
-    staleWhileRevalidate: {
-      enabled: false,
-      value: 60,
-      unit: 'seconds' as TimeUnit,
-    },
-    staleIfError: {
-      enabled: false,
-      value: 300,
-      unit: 'seconds' as TimeUnit,
-    },
-    headerText: '',
-  };
-
-  // Create the form with TanStack Form
-  const form = createForm<FormValues>(() => ({
-    defaultValues,
-    onSubmit: async ({ value }) => {
-      // Generate and emit header
-      generateHeader(value);
-    },
+  const form = createForm(() => ({
+    ...formOpts,
   }));
 
-  // Use reactive form state for UI calculations
   const formState = form.useStore();
 
-  // Effect to parse and update form when the header text changes
-  createEffect(() => {
-    const headerValue = props.headerValue;
-    
-    // Skip processing if the header value is empty or we're already handling it
-    if (headerValue === '' || updatingFromInput) return;
+  // createEffect(() => {
+  //   // const headerValue = props.headerValue;
 
-    // Don't update form fields if the header is invalid
-    const validation = validateHeader(headerValue);
-    if (!validation.valid) {
-      // Just update the headerText field to display validation errors
-      form.setFieldValue('headerText', headerValue);
-      return;
-    }
+  //   // if (headerValue === '' || updatingFromInput) return;
 
-    // Only proceed to update form fields for valid headers
-    const parsedDirectives = parseHeader(headerValue);
-    updatingFromInput = true;
+  //   // const validation = validateHeader(headerValue);
+  //   // if (!validation.valid) {
+  //   //   form.setFieldValue('headerText', headerValue);
+  //   //   return;
+  //   // }
 
-    try {
-      // Start with default values (reset form)
-      const newValues = { ...defaultValues };
-      
-      // Update cache type
-      if (parsedDirectives.some((d) => d.name === 'no-store')) {
-        newValues.cacheType = 'no-store';
-      } else if (parsedDirectives.some((d) => d.name === 'private')) {
-        newValues.cacheType = 'private';
-      } else if (parsedDirectives.some((d) => d.name === 'public')) {
-        newValues.cacheType = 'public';
-      }
+  //   const parsedDirectives = parseHeader(headerValue);
+  //   // updatingFromInput = true;
 
-      // Update fresh behavior
-      if (parsedDirectives.some((d) => d.name === 'no-cache')) {
-        newValues.freshBehavior = 'no-cache';
-      }
+  //   try {
+  //     const newValues = { ...defaultValues };
 
-      // Update validation options
-      newValues.mustRevalidate = parsedDirectives.some((d) => d.name === 'must-revalidate');
-      newValues.proxyRevalidate = parsedDirectives.some((d) => d.name === 'proxy-revalidate');
-      newValues.immutable = parsedDirectives.some((d) => d.name === 'immutable');
-      newValues.noTransform = parsedDirectives.some((d) => d.name === 'no-transform');
+  //     if (parsedDirectives.some((d) => d.name === 'no-store')) {
+  //       newValues.cacheType = 'no-store';
+  //     } else if (parsedDirectives.some((d) => d.name === 'private')) {
+  //       newValues.cacheType = 'private';
+  //     } else if (parsedDirectives.some((d) => d.name === 'public')) {
+  //       newValues.cacheType = 'public';
+  //     }
 
-      // Update max-age
-      const maxAgeDirective = parsedDirectives.find((d) => d.name === 'max-age');
-      if (maxAgeDirective && maxAgeDirective.value) {
-        const seconds = parseInt(maxAgeDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          newValues.maxAge = {
-            enabled: true,
-            value,
-            unit,
-          };
-        }
-      }
+  //     if (parsedDirectives.some((d) => d.name === 'no-cache')) {
+  //       newValues.freshBehavior = 'no-cache';
+  //     }
 
-      // Update s-maxage
-      const sMaxAgeDirective = parsedDirectives.find((d) => d.name === 's-maxage');
-      if (sMaxAgeDirective && sMaxAgeDirective.value) {
-        const seconds = parseInt(sMaxAgeDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          newValues.sMaxAge = {
-            enabled: true,
-            value,
-            unit,
-          };
-        }
-      }
+  //     newValues.mustRevalidate = parsedDirectives.some(
+  //       (d) => d.name === 'must-revalidate',
+  //     );
+  //     newValues.proxyRevalidate = parsedDirectives.some(
+  //       (d) => d.name === 'proxy-revalidate',
+  //     );
+  //     newValues.immutable = parsedDirectives.some(
+  //       (d) => d.name === 'immutable',
+  //     );
+  //     newValues.noTransform = parsedDirectives.some(
+  //       (d) => d.name === 'no-transform',
+  //     );
 
-      // Update stale-while-revalidate
-      const swrDirective = parsedDirectives.find((d) => d.name === 'stale-while-revalidate');
-      if (swrDirective && swrDirective.value) {
-        const seconds = parseInt(swrDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          newValues.staleWhileRevalidate = {
-            enabled: true,
-            value,
-            unit,
-          };
-        }
-      }
+  //     const maxAgeDirective = parsedDirectives.find(
+  //       (d) => d.name === 'max-age',
+  //     );
+  //     if (maxAgeDirective && maxAgeDirective.value) {
+  //       const seconds = parseInt(maxAgeDirective.value, 10);
+  //       if (!isNaN(seconds)) {
+  //         const { value, unit } = parseSeconds(seconds);
+  //         newValues.maxAge = {
+  //           enabled: true,
+  //           value,
+  //           unit,
+  //         };
+  //       }
+  //     }
 
-      // Update stale-if-error
-      const sieDirective = parsedDirectives.find((d) => d.name === 'stale-if-error');
-      if (sieDirective && sieDirective.value) {
-        const seconds = parseInt(sieDirective.value, 10);
-        if (!isNaN(seconds)) {
-          const { value, unit } = parseSeconds(seconds);
-          newValues.staleIfError = {
-            enabled: true,
-            value,
-            unit,
-          };
-        }
-      }
+  //     const sMaxAgeDirective = parsedDirectives.find(
+  //       (d) => d.name === 's-maxage',
+  //     );
+  //     if (sMaxAgeDirective && sMaxAgeDirective.value) {
+  //       const seconds = parseInt(sMaxAgeDirective.value, 10);
+  //       if (!isNaN(seconds)) {
+  //         const { value, unit } = parseSeconds(seconds);
+  //         newValues.sMaxAge = {
+  //           enabled: true,
+  //           value,
+  //           unit,
+  //         };
+  //       }
+  //     }
 
-      // Update headerText
-      newValues.headerText = headerValue;
+  //     const swrDirective = parsedDirectives.find(
+  //       (d) => d.name === 'stale-while-revalidate',
+  //     );
+  //     if (swrDirective && swrDirective.value) {
+  //       const seconds = parseInt(swrDirective.value, 10);
+  //       if (!isNaN(seconds)) {
+  //         const { value, unit } = parseSeconds(seconds);
+  //         newValues.staleWhileRevalidate = {
+  //           enabled: true,
+  //           value,
+  //           unit,
+  //         };
+  //       }
+  //     }
 
-      // Reset the form with the new values
-      form.reset(newValues);
-    } finally {
-      updatingFromInput = false;
-    }
-  });
+  //     const sieDirective = parsedDirectives.find(
+  //       (d) => d.name === 'stale-if-error',
+  //     );
+  //     if (sieDirective && sieDirective.value) {
+  //       const seconds = parseInt(sieDirective.value, 10);
+  //       if (!isNaN(seconds)) {
+  //         const { value, unit } = parseSeconds(seconds);
+  //         newValues.staleIfError = {
+  //           enabled: true,
+  //           value,
+  //           unit,
+  //         };
+  //       }
+  //     }
 
-  // Function to generate the Cache-Control header based on form state
-  const generateHeader = (values: FormValues) => {
-    const directives = [];
+  //     newValues.headerText = headerValue;
 
-    // Cache Type directives
-    if (values.cacheType === 'public') directives.push('public');
-    if (values.cacheType === 'private') directives.push('private');
-    if (values.cacheType === 'no-store') directives.push('no-store');
+  //     form.reset(newValues);
+  //   } finally {
+  //     updatingFromInput = false;
+  //   }
+  // });
 
-    // Fresh Behavior directives
-    if (values.freshBehavior === 'no-cache') directives.push('no-cache');
+  // const generateHeader = (values: FormSchema) => {
+  //   const directives = [];
 
-    // Validation directives
-    if (values.mustRevalidate) directives.push('must-revalidate');
-    if (values.proxyRevalidate && values.cacheType === 'public') directives.push('proxy-revalidate');
-    if (values.immutable) directives.push('immutable');
+  //   if (values.cacheType === 'public') directives.push('public');
+  //   if (values.cacheType === 'private') directives.push('private');
+  //   if (values.cacheType === 'no-store') directives.push('no-store');
 
-    // Time-based directives
-    if (values.maxAge.enabled && values.cacheType !== 'no-store') {
-      const maxAgeSecs = convertToSeconds(values.maxAge.value, values.maxAge.unit);
-      directives.push(`max-age=${maxAgeSecs}`);
-    }
+  //   if (values.freshBehavior === 'no-cache') directives.push('no-cache');
 
-    if (values.sMaxAge.enabled && values.cacheType !== 'no-store' && values.cacheType === 'public') {
-      const sMaxAgeSecs = convertToSeconds(values.sMaxAge.value, values.sMaxAge.unit);
-      directives.push(`s-maxage=${sMaxAgeSecs}`);
-    }
+  //   if (values.mustRevalidate) directives.push('must-revalidate');
+  //   if (values.proxyRevalidate && values.cacheType === 'public')
+  //     directives.push('proxy-revalidate');
+  //   if (values.immutable) directives.push('immutable');
 
-    // Other directives
-    if (values.noTransform) directives.push('no-transform');
+  //   if (values.maxAge.enabled && values.cacheType !== 'no-store') {
+  //     const maxAgeSecs = convertToSeconds(
+  //       values.maxAge.value,
+  //       values.maxAge.unit,
+  //     );
+  //     directives.push(`max-age=${maxAgeSecs}`);
+  //   }
 
-    // Extensions
-    if (values.staleWhileRevalidate.enabled && values.cacheType !== 'no-store') {
-      const staleWhileRevalidateSecs = convertToSeconds(
-        values.staleWhileRevalidate.value,
-        values.staleWhileRevalidate.unit,
-      );
-      directives.push(`stale-while-revalidate=${staleWhileRevalidateSecs}`);
-    }
+  //   if (
+  //     values.sMaxAge.enabled &&
+  //     values.cacheType !== 'no-store' &&
+  //     values.cacheType === 'public'
+  //   ) {
+  //     const sMaxAgeSecs = convertToSeconds(
+  //       values.sMaxAge.value,
+  //       values.sMaxAge.unit,
+  //     );
+  //     directives.push(`s-maxage=${sMaxAgeSecs}`);
+  //   }
 
-    if (values.staleIfError.enabled && values.cacheType !== 'no-store') {
-      const staleIfErrorSecs = convertToSeconds(
-        values.staleIfError.value,
-        values.staleIfError.unit,
-      );
-      directives.push(`stale-if-error=${staleIfErrorSecs}`);
-    }
+  //   if (values.noTransform) directives.push('no-transform');
 
-    // Sort directives alphabetically for readability
-    directives.sort();
+  //   if (
+  //     values.staleWhileRevalidate.enabled &&
+  //     values.cacheType !== 'no-store'
+  //   ) {
+  //     const staleWhileRevalidateSecs = convertToSeconds(
+  //       values.staleWhileRevalidate.value,
+  //       values.staleWhileRevalidate.unit,
+  //     );
+  //     directives.push(`stale-while-revalidate=${staleWhileRevalidateSecs}`);
+  //   }
 
-    // Create the final header value
-    const headerValue = directives.join(', ');
+  //   if (values.staleIfError.enabled && values.cacheType !== 'no-store') {
+  //     const staleIfErrorSecs = convertToSeconds(
+  //       values.staleIfError.value,
+  //       values.staleIfError.unit,
+  //     );
+  //     directives.push(`stale-if-error=${staleIfErrorSecs}`);
+  //   }
 
-    // Always notify parent of the new value from form controls
-    // This will override any invalid text input
-    props.onGenerate(headerValue);
-  };
+  //   directives.sort();
 
-  // Function to reset form to default state
-  const resetForm = () => {
-    form.reset(defaultValues);
-    // Generate header based on the default values
-    generateHeader(defaultValues);
-  };
+  //   const headerValue = directives.join(', ');
 
-  // Effect to handle dependencies and generate header on form changes
-  createEffect(() => {
-    const currentValues = formState().values;
-    
-    // Skip during external updates
-    if (updatingFromInput) return;
+  //   props.onGenerate(headerValue);
+  // };
 
-    // If no-store is selected, disable other caching options
-    if (currentValues.cacheType === 'no-store') {
-      form.setFieldValue('maxAge', { ...currentValues.maxAge, enabled: false });
-      form.setFieldValue('sMaxAge', { ...currentValues.sMaxAge, enabled: false });
-      form.setFieldValue('mustRevalidate', false);
-      form.setFieldValue('proxyRevalidate', false);
-      form.setFieldValue('immutable', false);
-      form.setFieldValue('staleWhileRevalidate', { ...currentValues.staleWhileRevalidate, enabled: false });
-      form.setFieldValue('staleIfError', { ...currentValues.staleIfError, enabled: false });
-      form.setFieldValue('freshBehavior', 'default');
-    }
+  // const resetForm = () => {
+  //   form.reset(defaultValues);
+  //   generateHeader(defaultValues);
+  // };
 
-    // If private cache type, disable s-maxage and proxy-revalidate
-    if (currentValues.cacheType === 'private') {
-      form.setFieldValue('sMaxAge', { ...currentValues.sMaxAge, enabled: false });
-      form.setFieldValue('proxyRevalidate', false);
-    }
+  // createEffect(() => {
+  //   const currentValues = formState().values;
 
-    // Generate and emit header
-    generateHeader(formState().values);
-  });
+  //   if (updatingFromInput) return;
 
-  // Computed property to check if all inputs should be disabled based on no-store
+  //   if (currentValues.cacheType === 'no-store') {
+  //     form.setFieldValue('maxAge', { ...currentValues.maxAge, enabled: false });
+  //     form.setFieldValue('sMaxAge', {
+  //       ...currentValues.sMaxAge,
+  //       enabled: false,
+  //     });
+  //     form.setFieldValue('mustRevalidate', false);
+  //     form.setFieldValue('proxyRevalidate', false);
+  //     form.setFieldValue('immutable', false);
+  //     form.setFieldValue('staleWhileRevalidate', {
+  //       ...currentValues.staleWhileRevalidate,
+  //       enabled: false,
+  //     });
+  //     form.setFieldValue('staleIfError', {
+  //       ...currentValues.staleIfError,
+  //       enabled: false,
+  //     });
+  //     form.setFieldValue('freshBehavior', 'default');
+  //   }
+
+  //   if (currentValues.cacheType === 'private') {
+  //     form.setFieldValue('sMaxAge', {
+  //       ...currentValues.sMaxAge,
+  //       enabled: false,
+  //     });
+  //     form.setFieldValue('proxyRevalidate', false);
+  //   }
+
+  //   generateHeader(formState().values);
+  // });
+
   const isNoStore = () => formState().values.cacheType === 'no-store';
 
-  // Computed property to check for max-age=0 warning
-  const hasMaxAgeZero = () => 
-    formState().values.maxAge.enabled && formState().values.maxAge.value === 0;
+  // const hasMaxAgeZero = () =>
+  //   formState().values.maxAge.enabled && formState().values.maxAge.value === 0;
 
-  // Computed properties to check for large durations
-  const maxAgeExceedsYear = () => {
-    const maxAge = formState().values.maxAge;
-    if (!maxAge.enabled) return false;
-    return convertToSeconds(maxAge.value, maxAge.unit) > ONE_YEAR_IN_SECONDS;
-  };
+  // const maxAgeExceedsYear = () => {
+  //   const maxAge = formState().values.maxAge;
+  //   if (!maxAge.enabled) return false;
+  //   return convertToSeconds(maxAge.value, maxAge.unit) > ONE_YEAR_IN_SECONDS;
+  // };
 
-  const sMaxAgeExceedsYear = () => {
-    const sMaxAge = formState().values.sMaxAge;
-    if (!sMaxAge.enabled) return false;
-    return convertToSeconds(sMaxAge.value, sMaxAge.unit) > ONE_YEAR_IN_SECONDS;
-  };
+  // const sMaxAgeExceedsYear = () => {
+  //   const sMaxAge = formState().values.sMaxAge;
+  //   if (!sMaxAge.enabled) return false;
+  //   return convertToSeconds(sMaxAge.value, sMaxAge.unit) > ONE_YEAR_IN_SECONDS;
+  // };
 
-  const staleWhileRevalidateExceedsYear = () => {
-    const swr = formState().values.staleWhileRevalidate;
-    if (!swr.enabled) return false;
-    return convertToSeconds(swr.value, swr.unit) > ONE_YEAR_IN_SECONDS;
-  };
+  // const staleWhileRevalidateExceedsYear = () => {
+  //   const swr = formState().values.staleWhileRevalidate;
+  //   if (!swr.enabled) return false;
+  //   return convertToSeconds(swr.value, swr.unit) > ONE_YEAR_IN_SECONDS;
+  // };
 
-  const staleIfErrorExceedsYear = () => {
-    const sie = formState().values.staleIfError;
-    if (!sie.enabled) return false;
-    return convertToSeconds(sie.value, sie.unit) > ONE_YEAR_IN_SECONDS;
-  };
+  // const staleIfErrorExceedsYear = () => {
+  //   const sie = formState().values.staleIfError;
+  //   if (!sie.enabled) return false;
+  //   return convertToSeconds(sie.value, sie.unit) > ONE_YEAR_IN_SECONDS;
+  // };
 
-  // Validation for header text field
-  const validateHeaderText = ({ value }: { value: string }) => {
-    const result = validateHeader(value);
-    return result.valid ? undefined : result.error;
+  // const validateHeaderText = ({ value }: { value: string }) => {
+  //   const result = validateHeader(value);
+  //   return result.valid ? undefined : result.error;
+  // };
+
+  const ageDirectiveValidators = (value: TimeDirective) => {
+    if (!value.enabled) return;
+    const seconds = convertToSeconds(value.value, value.unit);
+    if (seconds > ONE_YEAR_IN_SECONDS)
+      return `According to RFC 2616: To mark a response as "never expires," an origin server sends an
+   Expires date approximately one year from the time the response is
+   sent. HTTP/1.1 servers SHOULD NOT send Expires dates more than one
+   year in the future.`;
+    if (seconds < 0)
+      return `If the max-age value is negative (for example, -1) or isn't an integer (for example, 3599.99), then the caching behavior is unspecified. Caches are encouraged to treat the value as if it were 0 (this is noted in the Calculating Freshness Lifetime section of the HTTP specification).`;
+    if (seconds == 0)
+      return `Setting max-age=0 means the response is stale immediately,
+                    requiring revalidation.`;
   };
 
   return (
     <div class={cn('space-y-6', props.class)}>
       <div class="space-y-6">
-        {/* Optional direct text input */}
-        <form.Field
+        {/* <form.Field
           name="headerText"
           validators={{
             onChange: validateHeaderText,
@@ -392,16 +388,16 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                 <AlertDescription>
                   {field().state.meta.errors[0]}
                   <p class="mt-1 text-sm">
-                    The form options will continue to work normally with the last valid configuration. 
-                    If you change any form option, it will generate a new valid header.
+                    The form options will continue to work normally with the
+                    last valid configuration. If you change any form option, it
+                    will generate a new valid header.
                   </p>
                 </AlertDescription>
               </Alert>
             </Show>
           )}
-        </form.Field>
+        </form.Field> */}
 
-        {/* 1. Cache Type Section */}
         <div>
           <SectionDescription
             title="1. Cache Type"
@@ -426,13 +422,15 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                             onChange={() => field().handleChange('public')}
                             class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                           />
-                          <span class="text-sm leading-none font-medium">Public</span>
+                          <span class="text-sm leading-none font-medium">
+                            Public
+                          </span>
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">{directives.public.description}</p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Suitable for content that can be shared among multiple
-                            users, such as static images or CSS files.
+                            Suitable for content that can be shared among
+                            multiple users, such as static images or CSS files.
                           </p>
                         </div>
                       </div>
@@ -452,10 +450,12 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">{directives.private.description}</p>
+                          <p class="text-sm">
+                            {directives.private.description}
+                          </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Use this for personalized content or data that should not
-                            be shared, like user-specific pages.
+                            Use this for personalized content or data that
+                            should not be shared, like user-specific pages.
                           </p>
                         </div>
                       </div>
@@ -475,11 +475,13 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">{directives['no-store'].description}</p>
+                          <p class="text-sm">
+                            {directives['no-store'].description}
+                          </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Ensures that no part of the response is cached, important
-                            for privacy and security. This overrides all other
-                            directives.
+                            Ensures that no part of the response is cached,
+                            important for privacy and security. This overrides
+                            all other directives.
                           </p>
                         </div>
                       </div>
@@ -491,14 +493,18 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
           </Card>
         </div>
 
-        {/* 2. Freshness Duration Section */}
         <div class={isNoStore() ? 'opacity-50' : ''}>
           <SectionDescription
             title="2. Freshness Duration"
             description="Controls how long the response can be used before it becomes stale and potentially needs revalidation."
           />
           <Card class="space-y-4 p-4">
-            <form.Field name="maxAge">
+            <form.Field
+              name="maxAge"
+              validators={{
+                onChange: ({ value }) => ageDirectiveValidators(value),
+              }}
+            >
               {(field) => (
                 <div>
                   <TimeInput
@@ -506,43 +512,31 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     value={field().state.value.value}
                     unit={field().state.value.unit}
                     enabled={field().state.value.enabled}
-                    onValueChange={(value) => 
+                    onValueChange={(value) =>
                       field().handleChange({ ...field().state.value, value })
                     }
-                    onUnitChange={(unit) => 
+                    onUnitChange={(unit) =>
                       field().handleChange({ ...field().state.value, unit })
                     }
-                    onEnabledChange={(enabled) => 
+                    onEnabledChange={(enabled) =>
                       field().handleChange({ ...field().state.value, enabled })
                     }
                     description={`${directives['max-age'].description} After this time, the cache must revalidate the response with the server.`}
                     disabled={isNoStore()}
                   />
+                  {field().state.meta.errors ? (
+                    <em role="alert">{field().state.meta.errors.join(', ')}</em>
+                  ) : null}
                 </div>
               )}
             </form.Field>
 
-            {hasMaxAgeZero() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Note:</AlertTitle>
-                <AlertDescription>
-                  Setting max-age=0 means the response is stale immediately,
-                  requiring revalidation.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {maxAgeExceedsYear() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Warning:</AlertTitle>
-                <AlertDescription>
-                  You've set a very long max-age value (over 1 year). This may
-                  lead to outdated content being served for an extended period.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <form.Field name="sMaxAge">
+            <form.Field
+              name="sMaxAge"
+              validators={{
+                onChange: ({ value }) => ageDirectiveValidators(value),
+              }}
+            >
               {(field) => (
                 <div>
                   <TimeInput
@@ -550,17 +544,19 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     value={field().state.value.value}
                     unit={field().state.value.unit}
                     enabled={field().state.value.enabled}
-                    onValueChange={(value) => 
+                    onValueChange={(value) =>
                       field().handleChange({ ...field().state.value, value })
                     }
-                    onUnitChange={(unit) => 
+                    onUnitChange={(unit) =>
                       field().handleChange({ ...field().state.value, unit })
                     }
-                    onEnabledChange={(enabled) => 
+                    onEnabledChange={(enabled) =>
                       field().handleChange({ ...field().state.value, enabled })
                     }
                     description={`${directives['s-maxage'].description} Allows setting a different freshness duration for shared caches like CDNs.`}
-                    disabled={isNoStore() || formState().values.cacheType === 'private'}
+                    disabled={
+                      isNoStore() || formState().values.cacheType === 'private'
+                    }
                   />
                 </div>
               )}
@@ -572,7 +568,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
               </p>
             )}
 
-            {sMaxAgeExceedsYear() && (
+            {/* {sMaxAgeExceedsYear() && (
               <Alert variant="warning" class="mt-2">
                 <AlertTitle>Warning:</AlertTitle>
                 <AlertDescription>
@@ -581,7 +577,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                   period.
                 </AlertDescription>
               </Alert>
-            )}
+            )} */}
 
             <div class="space-y-2">
               <form.Field name="immutable">
@@ -602,12 +598,12 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                   </div>
                 )}
               </form.Field>
-              
+
               <p class="text-muted-foreground text-sm">
                 {directives.immutable.description} Best for versioned static
                 assets with hashed filenames that never change.
               </p>
-              
+
               {formState().values.immutable && (
                 <Alert variant="warning" class="mt-2">
                   <AlertTitle>Support Information:</AlertTitle>
@@ -628,7 +624,6 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
           </Card>
         </div>
 
-        {/* 3. Cache Behavior for Fresh Responses */}
         <div class={isNoStore() ? 'opacity-50' : ''}>
           <SectionDescription
             title="3. Cache Behavior for Fresh Responses"
@@ -660,13 +655,13 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            This is the default behavior; the cache uses the response
-                            if within its freshness period.
+                            This is the default behavior; the cache uses the
+                            response if within its freshness period.
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Caches can serve the response directly without contacting
-                            the origin server as long as it's within the max-age
-                            timeframe.
+                            Caches can serve the response directly without
+                            contacting the origin server as long as it's within
+                            the max-age timeframe.
                           </p>
                         </div>
                       </div>
@@ -687,11 +682,14 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">{directives['no-cache'].description}</p>
+                          <p class="text-sm">
+                            {directives['no-cache'].description}
+                          </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Forces revalidation even for fresh responses, potentially
-                            increasing server load. Can be combined with max-age, but
-                            max-age still defines the freshness period.
+                            Forces revalidation even for fresh responses,
+                            potentially increasing server load. Can be combined
+                            with max-age, but max-age still defines the
+                            freshness period.
                           </p>
                         </div>
                       </div>
@@ -703,7 +701,6 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
           </Card>
         </div>
 
-        {/* 4. Cache Behavior for Stale Responses */}
         <div class={isNoStore() ? 'opacity-50' : ''}>
           <SectionDescription
             title="4. Cache Behavior for Stale Responses"
@@ -733,8 +730,8 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                         {directives['must-revalidate'].description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                        Ensures that stale responses are not used without checking
-                        with the server, improving accuracy.
+                        Ensures that stale responses are not used without
+                        checking with the server, improving accuracy.
                       </p>
                     </div>
                   </>
@@ -750,7 +747,10 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                       <Checkbox
                         checked={field().state.value}
                         onChange={(checked) => field().handleChange(checked)}
-                        disabled={isNoStore() || formState().values.cacheType === 'private'}
+                        disabled={
+                          isNoStore() ||
+                          formState().values.cacheType === 'private'
+                        }
                       >
                         <div class="flex items-center space-x-2">
                           <CheckboxControl />
@@ -765,14 +765,14 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                         {directives['proxy-revalidate'].description}
                       </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                        Allows private caches to serve stale responses while requiring
-                        shared caches to revalidate.
+                        Allows private caches to serve stale responses while
+                        requiring shared caches to revalidate.
                       </p>
                     </div>
                   </>
                 )}
               </form.Field>
-              
+
               {formState().values.cacheType === 'private' && (
                 <p class="text-sm text-yellow-600 dark:text-yellow-500">
                   Only available with Public cache type
@@ -781,7 +781,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
             </div>
 
             <div class="border-border mt-2 space-y-3 border-t pt-2">
-              <form.Field name="staleWhileRevalidate">
+              <form.Field name="staleWhileRevalidate" validators={{}}>
                 {(field) => (
                   <div>
                     <TimeInput
@@ -789,14 +789,17 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                       value={field().state.value.value}
                       unit={field().state.value.unit}
                       enabled={field().state.value.enabled}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         field().handleChange({ ...field().state.value, value })
                       }
-                      onUnitChange={(unit) => 
+                      onUnitChange={(unit) =>
                         field().handleChange({ ...field().state.value, unit })
                       }
-                      onEnabledChange={(enabled) => 
-                        field().handleChange({ ...field().state.value, enabled })
+                      onEnabledChange={(enabled) =>
+                        field().handleChange({
+                          ...field().state.value,
+                          enabled,
+                        })
                       }
                       description="Allows a stale response to be served while a background revalidation occurs."
                       disabled={isNoStore()}
@@ -827,7 +830,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                 </Alert>
               )}
 
-              {staleWhileRevalidateExceedsYear() && (
+              {/* {staleWhileRevalidateExceedsYear() && (
                 <Alert variant="warning" class="mt-2">
                   <AlertTitle>Warning:</AlertTitle>
                   <AlertDescription>
@@ -835,7 +838,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     year). This may lead to very outdated content being served.
                   </AlertDescription>
                 </Alert>
-              )}
+              )} */}
             </div>
 
             <div class="border-border mt-2 space-y-3 border-t pt-2">
@@ -847,14 +850,17 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                       value={field().state.value.value}
                       unit={field().state.value.unit}
                       enabled={field().state.value.enabled}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         field().handleChange({ ...field().state.value, value })
                       }
-                      onUnitChange={(unit) => 
+                      onUnitChange={(unit) =>
                         field().handleChange({ ...field().state.value, unit })
                       }
-                      onEnabledChange={(enabled) => 
-                        field().handleChange({ ...field().state.value, enabled })
+                      onEnabledChange={(enabled) =>
+                        field().handleChange({
+                          ...field().state.value,
+                          enabled,
+                        })
                       }
                       description="Allows a stale response to be served if the origin server returns an error."
                       disabled={isNoStore()}
@@ -889,7 +895,7 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                 </Alert>
               )}
 
-              {staleIfErrorExceedsYear() && (
+              {/* {staleIfErrorExceedsYear() && (
                 <Alert variant="warning" class="mt-2">
                   <AlertTitle>Warning:</AlertTitle>
                   <AlertDescription>
@@ -898,12 +904,11 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                     errors.
                   </AlertDescription>
                 </Alert>
-              )}
+              )} */}
             </div>
           </Card>
         </div>
 
-        {/* 5. Other Directives */}
         <div>
           <SectionDescription
             title="5. Other Directives"
@@ -928,16 +933,18 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
                       </Checkbox>
                     </div>
                     <div class="mt-2 ml-6">
-                      <p class="text-sm">{directives['no-transform'].description}</p>
+                      <p class="text-sm">
+                        {directives['no-transform'].description}
+                      </p>
                       <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                        Ensures content integrity by preventing proxies from modifying
-                        your content.
+                        Ensures content integrity by preventing proxies from
+                        modifying your content.
                       </p>
                     </div>
                   </>
                 )}
               </form.Field>
-              
+
               {formState().values.noTransform && (
                 <div class="mt-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
                   <p class="text-sm text-blue-700 dark:text-blue-400">
@@ -952,14 +959,18 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
           </Card>
         </div>
 
-        {/* Reset Button */}
         <div class="flex justify-end">
-          <Button variant="outline" onClick={() => resetForm()} class="text-sm">
+          <Button
+            variant="outline"
+            onClick={() => {
+              form.reset(defaultFormOptions);
+            }}
+            class="text-sm"
+          >
             Reset to Defaults
           </Button>
         </div>
 
-        {/* Directive Interactions Info */}
         <div>
           <Separator class="my-4" />
           <h3 class="text-primary mb-3 text-lg font-medium">
@@ -989,6 +1000,17 @@ export const GenerateForm: Component<GenerateFormProps> = (props) => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const SectionDescription: Component<{ title: string; description: string }> = (
+  props,
+) => {
+  return (
+    <div class="mb-3">
+      <h3 class="text-primary text-lg font-medium">{props.title}</h3>
+      <p class="text-muted-foreground mt-1 text-sm">{props.description}</p>
     </div>
   );
 };

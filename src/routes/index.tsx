@@ -12,7 +12,7 @@ import { debounce } from '@solid-primitives/scheduled';
 import { createFileRoute } from '@tanstack/solid-router';
 import { fallback, zodValidator } from '@tanstack/zod-adapter';
 import {
-  Accessor,
+  type Accessor,
   For,
   Show,
   createEffect,

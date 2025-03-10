@@ -6,7 +6,7 @@ import {
 import { cn } from '@/lib/utils';
 import { createSignal, Show, type Component } from 'solid-js';
 
-type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
+export type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
 interface TimeInputProps {
   label: string | ReturnType<Component>;

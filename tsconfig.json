@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    // SolidStart defaults
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -7,15 +8,27 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "allowJs": true,
     "noEmit": true,
-    "strict": true,
     "types": ["vinxi/types/client", "node"],
     "isolatedModules": true,
+    "skipLibCheck": true,
+
+    // Linting
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "noImplicitOverride": true,
+    "allowJs": true,
+    "strictNullChecks": true,
+
+    // Shadcn Solid
     "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "skipLibCheck": true
+    }
   }
 }

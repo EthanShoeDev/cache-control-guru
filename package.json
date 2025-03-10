@@ -31,15 +31,18 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
     "@eslint/js": "^9.22.0",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.0.12",
     "@tanstack/router-plugin": "^1.114.1",
     "@tanstack/solid-router-devtools": "^1.114.1",
+    "@types/eslint-plugin-tailwindcss": "^3.17.0",
     "@types/node": "^22.13.10",
     "@typescript-eslint/parser": "^8.26.0",
     "eslint": "^9.22.0",
     "eslint-plugin-solid": "^0.14.5",
+    "eslint-plugin-tailwindcss": "^3.18.0",
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-tailwindcss": "^0.6.11",

@@ -1,4 +1,4 @@
-import { TimeInput } from '@/components/time-input';
+import { TimeInput, type TimeUnit } from '@/components/time-input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,8 +12,6 @@ import { directives } from '@/lib/cache-control';
 import { cn } from '@/lib/utils';
 import { createForm, formOptions } from '@tanstack/solid-form';
 import { type Component } from 'solid-js';
-
-type TimeUnit = 'seconds' | 'minutes' | 'hours' | 'days';
 
 type TimeDirective = {
   enabled: boolean;
@@ -427,7 +425,7 @@ export const GenerateForm: Component<{
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">{directives.public.description}</p>
+                          <p class="text-sm">{directives.public?.description}</p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Suitable for content that can be shared among
                             multiple users, such as static images or CSS files.
@@ -451,7 +449,7 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm">
-                            {directives.private.description}
+                            {directives.private?.description}
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Use this for personalized content or data that

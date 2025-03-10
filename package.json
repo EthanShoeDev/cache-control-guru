@@ -8,15 +8,16 @@
     "start": "vinxi start",
     "fmt": "SORT_IMPORTS=true prettier --cache --write .",
     "fmt:check": "SORT_IMPORTS=true prettier --check .",
-    "lint:fix": "tsc --noEmit && eslint --fix --report-unused-disable-directives --max-warnings 0 .",
-    "lint:check": "pnpm run fmt:check && tsc --noEmit && eslint . --report-unused-disable-directives --max-warnings 0",
-    "lint": "pnpm run fmt && pnpm run lint:fix"
+    "lint:fix": "tsc --noEmit && eslint --fix --report-unused-disable-directives --max-warnings 0 . && knip",
+    "lint:check": "pnpm run fmt:check && tsc --noEmit && eslint . --report-unused-disable-directives --max-warnings 0 && knip",
+    "lint": "pnpm run fmt && pnpm run lint:fix",
+    "knip": "knip",
+    "knip:fix:danger": "knip --fix --allow-remove-files"
   },
   "dependencies": {
     "@kobalte/core": "^0.13.9",
     "@solid-primitives/scheduled": "^1.5.0",
     "@solidjs/meta": "^0.29.4",
-    "@solidjs/router": "^0.15.3",
     "@solidjs/start": "^1.1.3",
     "@tanstack/solid-form": "^1.0.5",
     "@tanstack/solid-router": "^1.114.1",
@@ -43,6 +44,7 @@
     "eslint": "^9.22.0",
     "eslint-plugin-solid": "^0.14.5",
     "eslint-plugin-tailwindcss": "^3.18.0",
+    "knip": "^5.45.0",
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "prettier-plugin-tailwindcss": "^0.6.11",

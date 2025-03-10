@@ -1,5 +1,5 @@
 // Types
-export type CacheControlDirective = {
+type CacheControlDirective = {
   name: string;
   value?: string;
   description: string;
@@ -360,7 +360,7 @@ export function generateHeaderExplanation(headerValue: string): string {
 }
 
 // Format time in seconds to a human-readable string
-export function formatTime(seconds: number): string {
+function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) {
     return 'Invalid time value';
   }
@@ -397,131 +397,131 @@ export function formatTime(seconds: number): string {
   return parts.join(', ');
 }
 
-// Calculate time in seconds based on value and unit
-export function calculateSeconds(
-  value: number,
-  unit: 'seconds' | 'minutes' | 'hours' | 'days',
-): number {
-  switch (unit) {
-    case 'seconds':
-      return value;
-    case 'minutes':
-      return value * 60;
-    case 'hours':
-      return value * 3600;
-    case 'days':
-      return value * 86400;
-    default:
-      return value;
-  }
-}
+// // Calculate time in seconds based on value and unit
+// function calculateSeconds(
+//   value: number,
+//   unit: 'seconds' | 'minutes' | 'hours' | 'days',
+// ): number {
+//   switch (unit) {
+//     case 'seconds':
+//       return value;
+//     case 'minutes':
+//       return value * 60;
+//     case 'hours':
+//       return value * 3600;
+//     case 'days':
+//       return value * 86400;
+//     default:
+//       return value;
+//   }
+// }
 
-// Generate a Cache-Control header string based on form values
-export type FormValues = {
-  cacheability: 'public' | 'private' | 'none';
-  noStore: boolean;
-  noCache: boolean;
-  mustRevalidate: boolean;
-  proxyRevalidate: boolean;
-  maxAge: {
-    value: number;
-    unit: 'seconds' | 'minutes' | 'hours' | 'days';
-    enabled: boolean;
-  };
-  sMaxAge: {
-    value: number;
-    unit: 'seconds' | 'minutes' | 'hours' | 'days';
-    enabled: boolean;
-  };
-  staleWhileRevalidate: {
-    value: number;
-    unit: 'seconds' | 'minutes' | 'hours' | 'days';
-    enabled: boolean;
-  };
-  staleIfError: {
-    value: number;
-    unit: 'seconds' | 'minutes' | 'hours' | 'days';
-    enabled: boolean;
-  };
-  noTransform: boolean;
-  immutable: boolean;
-};
+// // Generate a Cache-Control header string based on form values
+// type FormValues = {
+//   cacheability: 'public' | 'private' | 'none';
+//   noStore: boolean;
+//   noCache: boolean;
+//   mustRevalidate: boolean;
+//   proxyRevalidate: boolean;
+//   maxAge: {
+//     value: number;
+//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
+//     enabled: boolean;
+//   };
+//   sMaxAge: {
+//     value: number;
+//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
+//     enabled: boolean;
+//   };
+//   staleWhileRevalidate: {
+//     value: number;
+//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
+//     enabled: boolean;
+//   };
+//   staleIfError: {
+//     value: number;
+//     unit: 'seconds' | 'minutes' | 'hours' | 'days';
+//     enabled: boolean;
+//   };
+//   noTransform: boolean;
+//   immutable: boolean;
+// };
 
-export function generateHeader(formValues: FormValues): string {
-  const directives: string[] = [];
+// function generateHeader(formValues: FormValues): string {
+//   const directives: string[] = [];
 
-  // Cacheability directives
-  if (formValues.cacheability === 'public') {
-    directives.push('public');
-  } else if (formValues.cacheability === 'private') {
-    directives.push('private');
-  }
+//   // Cacheability directives
+//   if (formValues.cacheability === 'public') {
+//     directives.push('public');
+//   } else if (formValues.cacheability === 'private') {
+//     directives.push('private');
+//   }
 
-  // Storage directives
-  if (formValues.noStore) {
-    directives.push('no-store');
-  }
+//   // Storage directives
+//   if (formValues.noStore) {
+//     directives.push('no-store');
+//   }
 
-  if (formValues.noCache) {
-    directives.push('no-cache');
-  }
+//   if (formValues.noCache) {
+//     directives.push('no-cache');
+//   }
 
-  // Validation directives
-  if (formValues.mustRevalidate) {
-    directives.push('must-revalidate');
-  }
+//   // Validation directives
+//   if (formValues.mustRevalidate) {
+//     directives.push('must-revalidate');
+//   }
 
-  if (formValues.proxyRevalidate) {
-    directives.push('proxy-revalidate');
-  }
+//   if (formValues.proxyRevalidate) {
+//     directives.push('proxy-revalidate');
+//   }
 
-  // Expiration directives
-  if (formValues.maxAge.enabled && formValues.maxAge.value >= 0) {
-    const seconds = calculateSeconds(
-      formValues.maxAge.value,
-      formValues.maxAge.unit,
-    );
-    directives.push(`max-age=${String(seconds)}`);
-  }
+//   // Expiration directives
+//   if (formValues.maxAge.enabled && formValues.maxAge.value >= 0) {
+//     const seconds = calculateSeconds(
+//       formValues.maxAge.value,
+//       formValues.maxAge.unit,
+//     );
+//     directives.push(`max-age=${String(seconds)}`);
+//   }
 
-  if (formValues.sMaxAge.enabled && formValues.sMaxAge.value >= 0) {
-    const seconds = calculateSeconds(
-      formValues.sMaxAge.value,
-      formValues.sMaxAge.unit,
-    );
-    directives.push(`s-maxage=${String(seconds)}`);
-  }
+//   if (formValues.sMaxAge.enabled && formValues.sMaxAge.value >= 0) {
+//     const seconds = calculateSeconds(
+//       formValues.sMaxAge.value,
+//       formValues.sMaxAge.unit,
+//     );
+//     directives.push(`s-maxage=${String(seconds)}`);
+//   }
 
-  if (
-    formValues.staleWhileRevalidate.enabled &&
-    formValues.staleWhileRevalidate.value >= 0
-  ) {
-    const seconds = calculateSeconds(
-      formValues.staleWhileRevalidate.value,
-      formValues.staleWhileRevalidate.unit,
-    );
-    directives.push(`stale-while-revalidate=${String(seconds)}`);
-  }
+//   if (
+//     formValues.staleWhileRevalidate.enabled &&
+//     formValues.staleWhileRevalidate.value >= 0
+//   ) {
+//     const seconds = calculateSeconds(
+//       formValues.staleWhileRevalidate.value,
+//       formValues.staleWhileRevalidate.unit,
+//     );
+//     directives.push(`stale-while-revalidate=${String(seconds)}`);
+//   }
 
-  if (formValues.staleIfError.enabled && formValues.staleIfError.value >= 0) {
-    const seconds = calculateSeconds(
-      formValues.staleIfError.value,
-      formValues.staleIfError.unit,
-    );
-    directives.push(`stale-if-error=${String(seconds)}`);
-  }
+//   if (formValues.staleIfError.enabled && formValues.staleIfError.value >= 0) {
+//     const seconds = calculateSeconds(
+//       formValues.staleIfError.value,
+//       formValues.staleIfError.unit,
+//     );
+//     directives.push(`stale-if-error=${String(seconds)}`);
+//   }
 
-  // Other directives
-  if (formValues.noTransform) {
-    directives.push('no-transform');
-  }
+//   // Other directives
+//   if (formValues.noTransform) {
+//     directives.push('no-transform');
+//   }
 
-  if (formValues.immutable) {
-    directives.push('immutable');
-  }
+//   if (formValues.immutable) {
+//     directives.push('immutable');
+//   }
 
-  return directives.join(', ');
-}
+//   return directives.join(', ');
+// }
 
 // Enhance explanation with time formatting and contextual information
 export function enhanceExplanation(directive: CacheControlDirective): string {

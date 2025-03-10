@@ -21,7 +21,10 @@ type TimeInputProps = {
   disabled?: boolean;
 };
 
-export const convertTimeUnitToSeconds = (value: number, unit: TimeUnit): number => {
+export const convertTimeUnitToSeconds = (
+  value: number,
+  unit: TimeUnit,
+): number => {
   switch (unit) {
     case 'minutes':
       return value * 60;

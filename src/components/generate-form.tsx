@@ -1,4 +1,8 @@
-import { convertTimeUnitToSeconds, TimeInput, type TimeUnit } from '@/components/time-input';
+import {
+  convertTimeUnitToSeconds,
+  TimeInput,
+  type TimeUnit,
+} from '@/components/time-input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -63,8 +67,6 @@ const formOpts = formOptions({
   } as FormSchema,
 });
 
-
-
 // const parseSeconds = (seconds: number): { value: number; unit: TimeUnit } => {
 //   if (seconds % (60 * 60 * 24) === 0 && seconds >= 60 * 60 * 24) {
 //     return { value: seconds / (60 * 60 * 24), unit: 'days' };
@@ -81,41 +83,59 @@ const formOpts = formOptions({
 const formSchemaToHeaderString = (values: FormSchema) => {
   const directives = [];
 
-  if(values.cacheType === 'no-store') directives.push('no-store');
-  if(values.cacheType === 'private') directives.push('private');
-  if(values.cacheType === 'public') directives.push('public');
+  if (values.cacheType === 'no-store') directives.push('no-store');
+  if (values.cacheType === 'private') directives.push('private');
+  if (values.cacheType === 'public') directives.push('public');
 
-  if(values.freshBehavior === 'no-cache') directives.push('no-cache');
+  if (values.freshBehavior === 'no-cache') directives.push('no-cache');
 
-  if(values.mustRevalidate) directives.push('must-revalidate');
-  if(values.proxyRevalidate && values.cacheType === 'public') directives.push('proxy-revalidate');
-  if(values.immutable) directives.push('immutable');
+  if (values.mustRevalidate) directives.push('must-revalidate');
+  if (values.proxyRevalidate && values.cacheType === 'public')
+    directives.push('proxy-revalidate');
+  if (values.immutable) directives.push('immutable');
 
-  if(values.maxAge.enabled && values.cacheType !== 'no-store') {
-    const maxAgeSecs = convertTimeUnitToSeconds(values.maxAge.value, values.maxAge.unit);
-    directives.push(`max-age=${maxAgeSecs}`);
+  if (values.maxAge.enabled && values.cacheType !== 'no-store') {
+    const maxAgeSecs = convertTimeUnitToSeconds(
+      values.maxAge.value,
+      values.maxAge.unit,
+    );
+    directives.push(`max-age=${maxAgeSecs.toString()}`);
   }
 
-  if(values.sMaxAge.enabled && values.cacheType !== 'no-store' && values.cacheType === 'public') {
-    const sMaxAgeSecs = convertTimeUnitToSeconds(values.sMaxAge.value, values.sMaxAge.unit);
-    directives.push(`s-maxage=${sMaxAgeSecs}`);
+  if (
+    values.sMaxAge.enabled &&
+    values.cacheType !== 'no-store' &&
+    values.cacheType === 'public'
+  ) {
+    const sMaxAgeSecs = convertTimeUnitToSeconds(
+      values.sMaxAge.value,
+      values.sMaxAge.unit,
+    );
+    directives.push(`s-maxage=${sMaxAgeSecs.toString()}`);
   }
-  
-  if(values.noTransform) directives.push('no-transform');
 
-  if(values.staleWhileRevalidate.enabled && values.cacheType !== 'no-store') {
-    const staleWhileRevalidateSecs = convertTimeUnitToSeconds(values.staleWhileRevalidate.value, values.staleWhileRevalidate.unit);
-    directives.push(`stale-while-revalidate=${staleWhileRevalidateSecs}`);
+  if (values.noTransform) directives.push('no-transform');
+
+  if (values.staleWhileRevalidate.enabled && values.cacheType !== 'no-store') {
+    const staleWhileRevalidateSecs = convertTimeUnitToSeconds(
+      values.staleWhileRevalidate.value,
+      values.staleWhileRevalidate.unit,
+    );
+    directives.push(
+      `stale-while-revalidate=${staleWhileRevalidateSecs.toString()}`,
+    );
   }
-  
-  if(values.staleIfError.enabled && values.cacheType !== 'no-store') {
-    const staleIfErrorSecs = convertTimeUnitToSeconds(values.staleIfError.value, values.staleIfError.unit);
-    directives.push(`stale-if-error=${staleIfErrorSecs}`);
+
+  if (values.staleIfError.enabled && values.cacheType !== 'no-store') {
+    const staleIfErrorSecs = convertTimeUnitToSeconds(
+      values.staleIfError.value,
+      values.staleIfError.unit,
+    );
+    directives.push(`stale-if-error=${staleIfErrorSecs.toString()}`);
   }
-  
+
   return directives.join(', ');
-}
-
+};
 
 const ONE_YEAR_IN_SECONDS = 31536000; // 365 days
 
@@ -133,9 +153,9 @@ export const GenerateForm: Component<{
   const formState = form.useStore();
 
   createEffect(() => {
-    if(!formState().isValid) return;
-    props.setTextInputHeaderValue(formSchemaToHeaderString(formState().values))
-  })
+    if (!formState().isValid) return;
+    props.setTextInputHeaderValue(formSchemaToHeaderString(formState().values));
+  });
 
   // createEffect(() => {
   //   // const headerValue = props.headerValue;

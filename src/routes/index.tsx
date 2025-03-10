@@ -16,6 +16,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  onMount,
 } from 'solid-js';
 import { z } from 'zod';
 
@@ -30,6 +31,8 @@ export const Route = createFileRoute('/')({
   validateSearch: zodValidator(pageSearchParamSchema),
 });
 
+const LOCAL_STORAGE_KEY = 'cache-control-header';
+
 function RouteComponent() {
   const searchParams =
     Route.useSearch() as unknown as Accessor<PageSearchParams>;
@@ -38,9 +41,21 @@ function RouteComponent() {
     searchParams().header ?? '',
   );
 
+
+  onMount(() => {
+    const savedHeader = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!savedHeader) return;
+    if (savedHeader === textInputHeaderValue()) return;
+    if(searchParams().header) return;
+    setTextInputHeaderValue(savedHeader);
+  })
+
   const navigate = Route.useNavigate();
-  const debouncedSearchParamUpdate = debounce(
-    (search: PageSearchParams) => void navigate({ search, replace: true }),
+  const debouncedSaveHeaderValue = debounce(
+    (value: string) => {
+      void navigate({ search: { header: value }, replace: true });
+      localStorage.setItem(LOCAL_STORAGE_KEY, value);
+    },
     50,
   );
 
@@ -49,7 +64,7 @@ function RouteComponent() {
     const headerVal = textInputHeaderValue();
 
     if (urlHeader !== headerVal)
-      debouncedSearchParamUpdate({ header: headerVal });
+      debouncedSaveHeaderValue(headerVal);
   });
 
   const headerParseResult = createMemo(() =>

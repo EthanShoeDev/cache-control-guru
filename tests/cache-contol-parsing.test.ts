@@ -22,6 +22,31 @@ test('parse "public, max-age=" (partially filled in header)', () => {
   expect(parseResult.errors.length).toBe(1);
 });
 
+test('parse "public, s-maxage=" (partially filled in header)', () => {
+  const parseResult = parseCacheControlHeader('public, s-maxage=');
+  expect(parseResult.valid).toBe(false);
+  if (parseResult.valid) return;
+  expect(parseResult.directives.length).toBe(2);
+  expect(parseResult.directives[0]?.name).toBe('public');
+  expect(parseResult.directives[1]?.name).toBe('s-maxage');
+  expect(parseResult.directives[1]?.value).toBe(undefined);
+  expect(parseResult.errors.length).toBe(1);
+});
+
+
+test('parse "public, s-maxage=, max-age=" (partially filled in header)', () => {
+  const parseResult = parseCacheControlHeader('public, s-maxage=, max-age=');
+  expect(parseResult.valid).toBe(false);
+  if (parseResult.valid) return;
+  expect(parseResult.directives.length).toBe(3);
+  expect(parseResult.directives[0]?.name).toBe('public');
+  expect(parseResult.directives[1]?.name).toBe('s-maxage');
+  expect(parseResult.directives[1]?.value).toBe(undefined);
+  expect(parseResult.directives[2]?.name).toBe('max-age');
+  expect(parseResult.directives[2]?.value).toBe(undefined);
+  expect(parseResult.errors.length).toBe(1);
+});
+
 test('parse "AAAAAAAAA" (garbage header)', () => {
   const parseResult = parseCacheControlHeader('AAAAAAAAA');
   expect(parseResult.valid).toBe(false);

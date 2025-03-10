@@ -124,6 +124,21 @@ const cacheControlSchema = z.string().transform((header, ctx) => {
   const directivesArray = parseHeader(header);
   const errors: string[] = [];
 
+  // Check for unknown directives
+  const unknownDirectives = directivesArray.filter(d => !isDirective(d.name));
+  if (unknownDirectives.length > 0) {
+    errors.push(`Unknown directive(s): ${unknownDirectives.map(d => d.name).join(', ')}`);
+  }
+  
+  // Check for numeric directives with invalid or missing values
+  const numericDirectivesWithInvalidValues = directivesArray.filter(
+    d => isNumericDirective(d.name) && 
+    (d.value === undefined || d.value === '' || isNaN(Number(d.value)))
+  );
+  if (numericDirectivesWithInvalidValues.length > 0) {
+    errors.push(`Invalid or missing value for directive(s): ${numericDirectivesWithInvalidValues.map(d => d.name).join(', ')}`);
+  }
+
   // Validate directive combinations
   const names = new Set(directivesArray.map((d) => d.name));
   if (names.has('no-store') && (names.has('public') || names.has('private'))) {
@@ -164,13 +179,19 @@ function parseHeader(headerValue: string): CacheControlDirective[] {
             type: 'both',
           } as const);
 
-      const parsedValue = isNumericDirective(name)
-        ? Number(directiveValue)
-        : directiveValue;
+      // Handle empty values for numeric directives
+      let value: string | number | undefined = directiveValue;
+      if (isNumericDirective(name)) {
+        if (directiveValue === undefined || directiveValue === '') {
+          value = undefined;
+        } else {
+          value = Number(directiveValue);
+        }
+      }
 
       return {
         name,
-        value: parsedValue,
+        value,
         description: directiveInfo.description,
         category: directiveInfo.category,
         type: directiveInfo.type,
@@ -192,19 +213,52 @@ export function parseCacheControlHeader(headerString: string):
     return { valid: true, directives: [] };
   }
 
-  const result = cacheControlSchema.safeParse(headerString);
+  // Always parse the header to get directives even if they're invalid
+  const parsedDirectives = parseHeader(headerString);
+  
+  // Collect all validation errors
+  const errors: string[] = [];
+  
+  // Check for numeric directives with missing values
+  const directivesWithMissingValues = parsedDirectives.filter(
+    d => isNumericDirective(d.name) && d.value === undefined
+  );
+  
+  if (directivesWithMissingValues.length > 0) {
+    errors.push(`Invalid or missing value for directive(s): ${directivesWithMissingValues.map(d => d.name).join(', ')}`);
+  }
+  
+  // Check for unknown directives
+  const unknownDirectives = parsedDirectives.filter(d => !isDirective(d.name));
+  if (unknownDirectives.length > 0) {
+    errors.push(`Unknown directive(s): ${unknownDirectives.map(d => d.name).join(', ')}`);
+  }
+  
+  // Check for mutually exclusive directives
+  const names = new Set(parsedDirectives.map((d) => d.name));
+  if (names.has('no-store') && (names.has('public') || names.has('private'))) {
+    errors.push('no-store cannot be combined with public or private');
+  }
+  if (names.has('public') && names.has('private')) {
+    errors.push('public and private are mutually exclusive');
+  }
+  
+  // Special case for handling garbage headers (completely invalid input)
+  if (parsedDirectives.length > 0 && !parsedDirectives.some(d => isDirective(d.name)) && errors.length === 0) {
+    errors.push("Unknown or invalid Cache-Control directive");
+  }
 
-  if (result.success) {
+  if (errors.length > 0) {
     return {
-      valid: true,
-      directives: result.data,
+      valid: false,
+      errors,
+      directives: parsedDirectives,
     };
   }
 
   return {
-    valid: false,
-    errors: result.error.issues.map((issue) => issue.message),
-    directives: [],
+    valid: true,
+    directives: parsedDirectives,
   };
 }
 

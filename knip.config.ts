@@ -11,7 +11,7 @@ const config: KnipConfig = {
     // https://docs.solidjs.com/guides/testing#components-testing
     '@solidjs/testing-library',
     '@testing-library/user-event',
-   ],
+  ],
 };
 
 export default config;

@@ -41,30 +41,25 @@ function RouteComponent() {
     searchParams().header ?? '',
   );
 
-
   onMount(() => {
     const savedHeader = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!savedHeader) return;
     if (savedHeader === textInputHeaderValue()) return;
-    if(searchParams().header) return;
+    if (searchParams().header) return;
     setTextInputHeaderValue(savedHeader);
-  })
+  });
 
   const navigate = Route.useNavigate();
-  const debouncedSaveHeaderValue = debounce(
-    (value: string) => {
-      void navigate({ search: { header: value }, replace: true });
-      localStorage.setItem(LOCAL_STORAGE_KEY, value);
-    },
-    50,
-  );
+  const debouncedSaveHeaderValue = debounce((value: string) => {
+    void navigate({ search: { header: value }, replace: true });
+    localStorage.setItem(LOCAL_STORAGE_KEY, value);
+  }, 50);
 
   createEffect(() => {
     const urlHeader = searchParams().header;
     const headerVal = textInputHeaderValue();
 
-    if (urlHeader !== headerVal)
-      debouncedSaveHeaderValue(headerVal);
+    if (urlHeader !== headerVal) debouncedSaveHeaderValue(headerVal);
   });
 
   const headerParseResult = createMemo(() =>

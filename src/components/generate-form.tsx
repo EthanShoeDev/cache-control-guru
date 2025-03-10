@@ -159,7 +159,11 @@ const headerStringToFormSchema = (
   // Set time-based directives
   const findTimeDirective = (name: string) => {
     const directive = parseResult.directives.find((d) => d.name === name);
-    if (directive && typeof directive.value === 'number' && !isNaN(directive.value)) {
+    if (
+      directive &&
+      typeof directive.value === 'number' &&
+      !isNaN(directive.value)
+    ) {
       // Determine best time unit
       let value = directive.value;
       let unit: TimeUnit = 'seconds';
@@ -221,7 +225,7 @@ export const GenerateForm: Component<{
   const formState = form.useStore();
 
   createEffect(() => {
-    if(formState().isPristine) return; // Don't update the text input if the form hasn't been touched
+    if (formState().isPristine) return; // Don't update the text input if the form hasn't been touched
     if (!formState().isValid) return;
     props.setTextInputHeaderValue(formSchemaToHeaderString(formState().values));
   });

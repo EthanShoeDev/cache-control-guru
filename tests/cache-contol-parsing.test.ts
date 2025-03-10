@@ -33,7 +33,6 @@ test('parse "public, s-maxage=" (partially filled in header)', () => {
   expect(parseResult.errors.length).toBe(1);
 });
 
-
 test('parse "public, s-maxage=, max-age=" (partially filled in header)', () => {
   const parseResult = parseCacheControlHeader('public, s-maxage=, max-age=');
   expect(parseResult.valid).toBe(false);

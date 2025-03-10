@@ -120,23 +120,34 @@ const isNumericDirective = (
 ): directive is (typeof numericDirectives)[number] =>
   numericDirectives.includes(directive as (typeof numericDirectives)[number]);
 
-const cacheControlSchema = z.string().transform((header, ctx) => {
+// Type definition for the parse result
+type ParseResult =
+  | { valid: true; directives: CacheControlDirective[] }
+  | { valid: false; directives: CacheControlDirective[]; errors: string[] };
+
+// Schema for validating Cache-Control headers
+const cacheControlSchema = z.string().transform((header): ParseResult => {
   const directivesArray = parseHeader(header);
   const errors: string[] = [];
 
   // Check for unknown directives
-  const unknownDirectives = directivesArray.filter(d => !isDirective(d.name));
+  const unknownDirectives = directivesArray.filter((d) => !isDirective(d.name));
   if (unknownDirectives.length > 0) {
-    errors.push(`Unknown directive(s): ${unknownDirectives.map(d => d.name).join(', ')}`);
+    errors.push(
+      `Unknown directive(s): ${unknownDirectives.map((d) => d.name).join(', ')}`,
+    );
   }
-  
+
   // Check for numeric directives with invalid or missing values
   const numericDirectivesWithInvalidValues = directivesArray.filter(
-    d => isNumericDirective(d.name) && 
-    (d.value === undefined || d.value === '' || isNaN(Number(d.value)))
+    (d) =>
+      isNumericDirective(d.name) &&
+      (d.value === undefined || d.value === '' || isNaN(Number(d.value))),
   );
   if (numericDirectivesWithInvalidValues.length > 0) {
-    errors.push(`Invalid or missing value for directive(s): ${numericDirectivesWithInvalidValues.map(d => d.name).join(', ')}`);
+    errors.push(
+      `Invalid or missing value for directive(s): ${numericDirectivesWithInvalidValues.map((d) => d.name).join(', ')}`,
+    );
   }
 
   // Validate directive combinations
@@ -148,14 +159,27 @@ const cacheControlSchema = z.string().transform((header, ctx) => {
     errors.push('public and private are mutually exclusive');
   }
 
-  if (errors.length > 0) {
-    errors.forEach((error) => {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
-    });
-    return z.NEVER;
+  // Special case for handling garbage headers (completely invalid input)
+  if (
+    directivesArray.length > 0 &&
+    !directivesArray.some((d) => isDirective(d.name)) &&
+    errors.length === 0
+  ) {
+    errors.push('Unknown or invalid Cache-Control directive');
   }
 
-  return directivesArray;
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      errors,
+      directives: directivesArray,
+    };
+  }
+
+  return {
+    valid: true,
+    directives: directivesArray,
+  };
 });
 
 function parseHeader(headerValue: string): CacheControlDirective[] {
@@ -199,67 +223,25 @@ function parseHeader(headerValue: string): CacheControlDirective[] {
     });
 }
 
-export function parseCacheControlHeader(headerString: string):
-  | {
-      valid: true;
-      directives: CacheControlDirective[];
-    }
-    | {
-      valid: false;
-      directives: CacheControlDirective[];
-      errors: string[];
-    } {
+export function parseCacheControlHeader(headerString: string): ParseResult {
   if (!headerString.trim()) {
     return { valid: true, directives: [] };
   }
 
-  // Always parse the header to get directives even if they're invalid
-  const parsedDirectives = parseHeader(headerString);
-  
-  // Collect all validation errors
-  const errors: string[] = [];
-  
-  // Check for numeric directives with missing values
-  const directivesWithMissingValues = parsedDirectives.filter(
-    d => isNumericDirective(d.name) && d.value === undefined
-  );
-  
-  if (directivesWithMissingValues.length > 0) {
-    errors.push(`Invalid or missing value for directive(s): ${directivesWithMissingValues.map(d => d.name).join(', ')}`);
-  }
-  
-  // Check for unknown directives
-  const unknownDirectives = parsedDirectives.filter(d => !isDirective(d.name));
-  if (unknownDirectives.length > 0) {
-    errors.push(`Unknown directive(s): ${unknownDirectives.map(d => d.name).join(', ')}`);
-  }
-  
-  // Check for mutually exclusive directives
-  const names = new Set(parsedDirectives.map((d) => d.name));
-  if (names.has('no-store') && (names.has('public') || names.has('private'))) {
-    errors.push('no-store cannot be combined with public or private');
-  }
-  if (names.has('public') && names.has('private')) {
-    errors.push('public and private are mutually exclusive');
-  }
-  
-  // Special case for handling garbage headers (completely invalid input)
-  if (parsedDirectives.length > 0 && !parsedDirectives.some(d => isDirective(d.name)) && errors.length === 0) {
-    errors.push("Unknown or invalid Cache-Control directive");
-  }
+  // Use Zod schema to validate and parse the header
+  const result = cacheControlSchema.safeParse(headerString);
 
-  if (errors.length > 0) {
+  if (result.success) {
+    return result.data;
+  } else {
+    // In case of an error in the transformation, return a useful error message
+    // This should rarely happen as most errors are handled within the transform
     return {
       valid: false,
-      errors,
-      directives: parsedDirectives,
+      directives: parseHeader(headerString),
+      errors: result.error.errors.map((e) => e.message),
     };
   }
-
-  return {
-    valid: true,
-    directives: parsedDirectives,
-  };
 }
 
 // Enhanced explanation generator

@@ -407,7 +407,12 @@ export const GenerateForm: Component<{
                     </div>
                     <div class="mt-2 ml-6">
                       <p class="text-sm">
-                        Prevents unnecessary revalidation specifically during page reload/refresh. While browsers normally use cached responses during navigation, they typically revalidate all resources when a user explicitly refreshes the page. This directive tells browsers "don't revalidate even on refresh."
+                        Prevents unnecessary revalidation specifically during
+                        page reload/refresh. While browsers normally use cached
+                        responses during navigation, they typically revalidate
+                        all resources when a user explicitly refreshes the page.
+                        This directive tells browsers "don't revalidate even on
+                        refresh."
                       </p>
                     </div>
                   </>
@@ -502,7 +507,10 @@ export const GenerateForm: Component<{
                         </label>
                         <div class="mt-2 ml-6">
                           <p class="text-sm whitespace-pre-line">
-                            This is the default browser behavior for normal navigation. Browsers use cached responses within their freshness period without checking with the server.
+                            This is the default browser behavior for normal
+                            navigation. Browsers use cached responses within
+                            their freshness period without checking with the
+                            server.
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Caches can serve the response directly without
@@ -510,7 +518,10 @@ export const GenerateForm: Component<{
                             the max-age timeframe.
                           </p>
                           <p class="text-muted-foreground mt-2 text-xs italic">
-                            Note: During page refresh/reload, browsers typically still check with the server even for fresh responses. To prevent this, use the 'immutable' directive in the Freshness Duration section.
+                            Note: During page refresh/reload, browsers typically
+                            still check with the server even for fresh
+                            responses. To prevent this, use the 'immutable'
+                            directive in the Freshness Duration section.
                           </p>
                         </div>
                       </div>
@@ -954,18 +965,16 @@ const RadioOption: Component<RadioOptionProps> = (props) => {
           name={props.name}
           value={props.value}
           checked={props.checked}
-          onChange={props.onChange}
+          onChange={() => {
+            props.onChange();
+          }}
           disabled={props.disabled}
           class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
         />
-        <span class="text-sm leading-none font-medium">
-          {props.label}
-        </span>
+        <span class="text-sm leading-none font-medium">{props.label}</span>
       </label>
       <div class="mt-2 ml-6">
-        <p class="text-sm whitespace-pre-line">
-          {props.description}
-        </p>
+        <p class="text-sm whitespace-pre-line">{props.description}</p>
         {props.additionalContent}
       </div>
     </div>

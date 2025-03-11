@@ -15,6 +15,7 @@ import { narrow } from '@/lib/utils';
 import { debounce } from '@solid-primitives/scheduled';
 import { createFileRoute } from '@tanstack/solid-router';
 import { fallback, zodValidator } from '@tanstack/zod-adapter';
+import { Copy } from 'lucide-solid';
 import {
   type Accessor,
   type Component,
@@ -24,6 +25,7 @@ import {
   createSignal,
   onMount,
 } from 'solid-js';
+
 import { z } from 'zod';
 
 const pageSearchParamSchema = z.object({
@@ -42,7 +44,7 @@ type CommonPatternItemProps = {
   value: string;
   tooltip: string;
   onClick: () => void;
-}
+};
 
 const CommonPatternItem: Component<CommonPatternItemProps> = (props) => {
   return (
@@ -52,18 +54,20 @@ const CommonPatternItem: Component<CommonPatternItemProps> = (props) => {
           <Button
             variant="outline"
             size="sm"
-            class="w-full h-auto justify-start px-4 py-3 transition-all duration-200 border border-secondary rounded-md shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-primary/5 dark:border-secondary dark:hover:border-primary/20 dark:hover:bg-primary/10"
+            class="border-secondary hover:border-primary/30 hover:bg-primary/5 dark:border-secondary dark:hover:border-primary/20 dark:hover:bg-primary/10 h-auto w-full justify-start rounded-md border px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md"
             onClick={props.onClick}
           >
             <div class="w-full text-left">
-              <div class="text-sm font-semibold text-foreground">{props.title}</div>
+              <div class="text-foreground text-sm font-semibold">
+                {props.title}
+              </div>
             </div>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <div class="flex flex-col gap-2 max-w-xs">
+          <div class="flex max-w-xs flex-col gap-2">
             <p class="text-sm">{props.tooltip}</p>
-            <div class="font-mono text-xs px-2 py-1 bg-muted rounded text-muted-foreground overflow-hidden">
+            <div class="bg-muted text-muted-foreground overflow-hidden rounded px-2 py-1 font-mono text-xs">
               {props.value}
             </div>
           </div>
@@ -139,7 +143,7 @@ function RouteComponent() {
                         );
                       }}
                     >
-                      Copy
+                      <Copy />
                     </Button>
                   )}
                 </div>
@@ -150,7 +154,7 @@ function RouteComponent() {
                     setTextInputHeaderValue(e.currentTarget.value)
                   }
                   placeholder="e.g. max-age=3600, no-cache, public"
-                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] text-lg w-full resize-y rounded-md border bg-transparent px-3 py-2 font-mono shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] w-full resize-y rounded-md border bg-transparent px-3 py-2 font-mono text-lg shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 

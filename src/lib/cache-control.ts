@@ -14,13 +14,13 @@ type DirectiveDefinition = Omit<CacheControlDirective, 'name' | 'value'>;
 export const directives = {
   public: {
     description:
-      'Response can be stored by any cache, including browsers and CDNs. Use for content that can be shared among users.',
+      'Response can be stored by any cache, including browsers and CDNs.\nUse for content that can be shared among users, such as static images or CSS files.',
     category: 'general',
     type: 'response',
   },
   private: {
     description:
-      'Response is intended for a single user and must not be stored by shared caches like CDNs. Use for personalized content.',
+      'Response is intended for a single user and must not be stored by shared caches like CDNs.\nUse for personalized content, like user-specific pages.',
     category: 'general',
     type: 'response',
   },
@@ -32,7 +32,7 @@ export const directives = {
   },
   'no-store': {
     description:
-      'Response must not be stored in any cache. Used for sensitive data that should never be cached. This is the most restrictive directive and overrides all others.',
+      'Response must not be stored in any cache.\nUsed for sensitive data that should never be cached. Overrides all other directives.',
     category: 'general',
     type: 'both',
   },

@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { directives, parseCacheControlHeader } from '@/lib/cache-control';
 import { cn } from '@/lib/utils';
 import { createForm, formOptions } from '@tanstack/solid-form';
-import { createEffect, type Component } from 'solid-js';
+import { createEffect, type Component, type JSX } from 'solid-js';
 
 type TimeDirective = {
   enabled: boolean;
@@ -242,253 +242,7 @@ export const GenerateForm: Component<{
     form.reset(formSchema);
   });
 
-  // Old code for reference
-  // createEffect(() => {
-  //   // const headerValue = props.headerValue;
-
-  //   // if (headerValue === '' || updatingFromInput) return;
-
-  //   // const validation = validateHeader(headerValue);
-  //   // if (!validation.valid) {
-  //   //   form.setFieldValue('headerText', headerValue);
-  //   //   return;
-  //   // }
-
-  //   const parsedDirectives = parseHeader(headerValue);
-  //   // updatingFromInput = true;
-
-  //   try {
-  //     const newValues = { ...defaultValues };
-
-  //     if (parsedDirectives.some((d) => d.name === 'no-store')) {
-  //       newValues.cacheType = 'no-store';
-  //     } else if (parsedDirectives.some((d) => d.name === 'private')) {
-  //       newValues.cacheType = 'private';
-  //     } else if (parsedDirectives.some((d) => d.name === 'public')) {
-  //       newValues.cacheType = 'public';
-  //     }
-
-  //     if (parsedDirectives.some((d) => d.name === 'no-cache')) {
-  //       newValues.freshBehavior = 'no-cache';
-  //     }
-
-  //     newValues.mustRevalidate = parsedDirectives.some(
-  //       (d) => d.name === 'must-revalidate',
-  //     );
-  //     newValues.proxyRevalidate = parsedDirectives.some(
-  //       (d) => d.name === 'proxy-revalidate',
-  //     );
-  //     newValues.immutable = parsedDirectives.some(
-  //       (d) => d.name === 'immutable',
-  //     );
-  //     newValues.noTransform = parsedDirectives.some(
-  //       (d) => d.name === 'no-transform',
-  //     );
-
-  //     const maxAgeDirective = parsedDirectives.find(
-  //       (d) => d.name === 'max-age',
-  //     );
-  //     if (maxAgeDirective && maxAgeDirective.value) {
-  //       const seconds = parseInt(maxAgeDirective.value, 10);
-  //       if (!isNaN(seconds)) {
-  //         const { value, unit } = parseSeconds(seconds);
-  //         newValues.maxAge = {
-  //           enabled: true,
-  //           value,
-  //           unit,
-  //         };
-  //       }
-  //     }
-
-  //     const sMaxAgeDirective = parsedDirectives.find(
-  //       (d) => d.name === 's-maxage',
-  //     );
-  //     if (sMaxAgeDirective && sMaxAgeDirective.value) {
-  //       const seconds = parseInt(sMaxAgeDirective.value, 10);
-  //       if (!isNaN(seconds)) {
-  //         const { value, unit } = parseSeconds(seconds);
-  //         newValues.sMaxAge = {
-  //           enabled: true,
-  //           value,
-  //           unit,
-  //         };
-  //       }
-  //     }
-
-  //     const swrDirective = parsedDirectives.find(
-  //       (d) => d.name === 'stale-while-revalidate',
-  //     );
-  //     if (swrDirective && swrDirective.value) {
-  //       const seconds = parseInt(swrDirective.value, 10);
-  //       if (!isNaN(seconds)) {
-  //         const { value, unit } = parseSeconds(seconds);
-  //         newValues.staleWhileRevalidate = {
-  //           enabled: true,
-  //           value,
-  //           unit,
-  //         };
-  //       }
-  //     }
-
-  //     const sieDirective = parsedDirectives.find(
-  //       (d) => d.name === 'stale-if-error',
-  //     );
-  //     if (sieDirective && sieDirective.value) {
-  //       const seconds = parseInt(sieDirective.value, 10);
-  //       if (!isNaN(seconds)) {
-  //         const { value, unit } = parseSeconds(seconds);
-  //         newValues.staleIfError = {
-  //           enabled: true,
-  //           value,
-  //           unit,
-  //         };
-  //       }
-  //     }
-
-  //     newValues.headerText = headerValue;
-
-  //     form.reset(newValues);
-  //   } finally {
-  //     updatingFromInput = false;
-  //   }
-  // });
-
-  // const generateHeader = (values: FormSchema) => {
-  //   const directives = [];
-
-  //   if (values.cacheType === 'public') directives.push('public');
-  //   if (values.cacheType === 'private') directives.push('private');
-  //   if (values.cacheType === 'no-store') directives.push('no-store');
-
-  //   if (values.freshBehavior === 'no-cache') directives.push('no-cache');
-
-  //   if (values.mustRevalidate) directives.push('must-revalidate');
-  //   if (values.proxyRevalidate && values.cacheType === 'public')
-  //     directives.push('proxy-revalidate');
-  //   if (values.immutable) directives.push('immutable');
-
-  //   if (values.maxAge.enabled && values.cacheType !== 'no-store') {
-  //     const maxAgeSecs = convertToSeconds(
-  //       values.maxAge.value,
-  //       values.maxAge.unit,
-  //     );
-  //     directives.push(`max-age=${maxAgeSecs}`);
-  //   }
-
-  //   if (
-  //     values.sMaxAge.enabled &&
-  //     values.cacheType !== 'no-store' &&
-  //     values.cacheType === 'public'
-  //   ) {
-  //     const sMaxAgeSecs = convertToSeconds(
-  //       values.sMaxAge.value,
-  //       values.sMaxAge.unit,
-  //     );
-  //     directives.push(`s-maxage=${sMaxAgeSecs}`);
-  //   }
-
-  //   if (values.noTransform) directives.push('no-transform');
-
-  //   if (
-  //     values.staleWhileRevalidate.enabled &&
-  //     values.cacheType !== 'no-store'
-  //   ) {
-  //     const staleWhileRevalidateSecs = convertToSeconds(
-  //       values.staleWhileRevalidate.value,
-  //       values.staleWhileRevalidate.unit,
-  //     );
-  //     directives.push(`stale-while-revalidate=${staleWhileRevalidateSecs}`);
-  //   }
-
-  //   if (values.staleIfError.enabled && values.cacheType !== 'no-store') {
-  //     const staleIfErrorSecs = convertToSeconds(
-  //       values.staleIfError.value,
-  //       values.staleIfError.unit,
-  //     );
-  //     directives.push(`stale-if-error=${staleIfErrorSecs}`);
-  //   }
-
-  //   directives.sort();
-
-  //   const headerValue = directives.join(', ');
-
-  //   props.onGenerate(headerValue);
-  // };
-
-  // const resetForm = () => {
-  //   form.reset(defaultValues);
-  //   generateHeader(defaultValues);
-  // };
-
-  // createEffect(() => {
-  //   const currentValues = formState().values;
-
-  //   if (updatingFromInput) return;
-
-  //   if (currentValues.cacheType === 'no-store') {
-  //     form.setFieldValue('maxAge', { ...currentValues.maxAge, enabled: false });
-  //     form.setFieldValue('sMaxAge', {
-  //       ...currentValues.sMaxAge,
-  //       enabled: false,
-  //     });
-  //     form.setFieldValue('mustRevalidate', false);
-  //     form.setFieldValue('proxyRevalidate', false);
-  //     form.setFieldValue('immutable', false);
-  //     form.setFieldValue('staleWhileRevalidate', {
-  //       ...currentValues.staleWhileRevalidate,
-  //       enabled: false,
-  //     });
-  //     form.setFieldValue('staleIfError', {
-  //       ...currentValues.staleIfError,
-  //       enabled: false,
-  //     });
-  //     form.setFieldValue('freshBehavior', 'default');
-  //   }
-
-  //   if (currentValues.cacheType === 'private') {
-  //     form.setFieldValue('sMaxAge', {
-  //       ...currentValues.sMaxAge,
-  //       enabled: false,
-  //     });
-  //     form.setFieldValue('proxyRevalidate', false);
-  //   }
-
-  //   generateHeader(formState().values);
-  // });
-
   const isNoStore = () => formState().values.cacheType === 'no-store';
-
-  // const hasMaxAgeZero = () =>
-  //   formState().values.maxAge.enabled && formState().values.maxAge.value === 0;
-
-  // const maxAgeExceedsYear = () => {
-  //   const maxAge = formState().values.maxAge;
-  //   if (!maxAge.enabled) return false;
-  //   return convertToSeconds(maxAge.value, maxAge.unit) > ONE_YEAR_IN_SECONDS;
-  // };
-
-  // const sMaxAgeExceedsYear = () => {
-  //   const sMaxAge = formState().values.sMaxAge;
-  //   if (!sMaxAge.enabled) return false;
-  //   return convertToSeconds(sMaxAge.value, sMaxAge.unit) > ONE_YEAR_IN_SECONDS;
-  // };
-
-  // const staleWhileRevalidateExceedsYear = () => {
-  //   const swr = formState().values.staleWhileRevalidate;
-  //   if (!swr.enabled) return false;
-  //   return convertToSeconds(swr.value, swr.unit) > ONE_YEAR_IN_SECONDS;
-  // };
-
-  // const staleIfErrorExceedsYear = () => {
-  //   const sie = formState().values.staleIfError;
-  //   if (!sie.enabled) return false;
-  //   return convertToSeconds(sie.value, sie.unit) > ONE_YEAR_IN_SECONDS;
-  // };
-
-  // const validateHeaderText = ({ value }: { value: string }) => {
-  //   const result = validateHeader(value);
-  //   return result.valid ? undefined : result.error;
-  // };
 
   const ageDirectiveValidators = (value: TimeDirective) => {
     if (!value.enabled) return;
@@ -507,122 +261,47 @@ export const GenerateForm: Component<{
   return (
     <div class={cn('space-y-6', props.class)}>
       <div class="space-y-6">
-        {/* <form.Field
-          name="headerText"
-          validators={{
-            onChange: validateHeaderText,
-          }}
-        >
-          {(field) => (
-            <Show when={field().state.meta.errors.length > 0}>
-              <Alert variant="warning" class="mb-4">
-                <AlertTitle>Invalid Header Format</AlertTitle>
-                <AlertDescription>
-                  {field().state.meta.errors[0]}
-                  <p class="mt-1 text-sm">
-                    The form options will continue to work normally with the
-                    last valid configuration. If you change any form option, it
-                    will generate a new valid header.
-                  </p>
-                </AlertDescription>
-              </Alert>
-            </Show>
-          )}
-        </form.Field> */}
-
         <div>
           <SectionDescription
             title="1. Cache Type"
-            description="Determines which caches can store the response. This is the most basic setting for controlling caching behavior."
+            description="Determines which caches can store the response."
           />
           <Card class="space-y-4 p-4">
             <div class="space-y-3">
-              <p class="text-sm font-medium">
-                Select how the response can be cached:
-              </p>
               <div class="flex flex-col gap-4">
                 <form.Field name="cacheType">
                   {(field) => (
                     <>
-                      <div>
-                        <label class="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="cacheType"
-                            value="public"
-                            checked={field().state.value === 'public'}
-                            onChange={() => {
-                              field().handleChange('public');
-                            }}
-                            class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                          />
-                          <span class="text-sm leading-none font-medium">
-                            Public
-                          </span>
-                        </label>
-                        <div class="mt-2 ml-6">
-                          <p class="text-sm">{directives.public.description}</p>
-                          <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Suitable for content that can be shared among
-                            multiple users, such as static images or CSS files.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label class="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="cacheType"
-                            value="private"
-                            checked={field().state.value === 'private'}
-                            onChange={() => {
-                              field().handleChange('private');
-                            }}
-                            class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                          />
-                          <span class="text-sm leading-none font-medium">
-                            Private
-                          </span>
-                        </label>
-                        <div class="mt-2 ml-6">
-                          <p class="text-sm">
-                            {directives.private.description}
-                          </p>
-                          <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Use this for personalized content or data that
-                            should not be shared, like user-specific pages.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label class="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="cacheType"
-                            value="no-store"
-                            checked={field().state.value === 'no-store'}
-                            onChange={() => {
-                              field().handleChange('no-store');
-                            }}
-                            class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                          />
-                          <span class="text-sm leading-none font-medium">
-                            No caching (no-store)
-                          </span>
-                        </label>
-                        <div class="mt-2 ml-6">
-                          <p class="text-sm">
-                            {directives['no-store'].description}
-                          </p>
-                          <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Ensures that no part of the response is cached,
-                            important for privacy and security. This overrides
-                            all other directives.
-                          </p>
-                        </div>
-                      </div>
+                      <RadioOption
+                        name="cacheType"
+                        value="public"
+                        checked={field().state.value === 'public'}
+                        onChange={() => {
+                          field().handleChange('public');
+                        }}
+                        label="Public"
+                        description={directives.public.description}
+                      />
+                      <RadioOption
+                        name="cacheType"
+                        value="private"
+                        checked={field().state.value === 'private'}
+                        onChange={() => {
+                          field().handleChange('private');
+                        }}
+                        label="Private"
+                        description={directives.private.description}
+                      />
+                      <RadioOption
+                        name="cacheType"
+                        value="no-store"
+                        checked={field().state.value === 'no-store'}
+                        onChange={() => {
+                          field().handleChange('no-store');
+                        }}
+                        label="No Caching (no-store)"
+                        description={directives['no-store'].description}
+                      />
                     </>
                   )}
                 </form.Field>
@@ -706,42 +385,34 @@ export const GenerateForm: Component<{
               </p>
             )}
 
-            {/* {sMaxAgeExceedsYear() && (
-              <Alert variant="warning" class="mt-2">
-                <AlertTitle>Warning:</AlertTitle>
-                <AlertDescription>
-                  You've set a very long s-maxage value (over 1 year). This may
-                  lead to outdated content being served by CDNs for an extended
-                  period.
-                </AlertDescription>
-              </Alert>
-            )} */}
-
             <div class="space-y-2">
               <form.Field name="immutable">
                 {(field) => (
-                  <div class="flex items-center space-x-2">
-                    <Checkbox
-                      checked={field().state.value}
-                      onChange={(checked) => {
-                        field().handleChange(checked);
-                      }}
-                      disabled={isNoStore()}
-                    >
-                      <div class="flex items-center space-x-2">
-                        <CheckboxControl />
-                        <CheckboxLabel class="text-sm leading-none font-medium">
-                          Immutable
-                        </CheckboxLabel>
-                      </div>
-                    </Checkbox>
-                  </div>
+                  <>
+                    <div class="flex items-center space-x-2">
+                      <Checkbox
+                        checked={field().state.value}
+                        onChange={(checked) => {
+                          field().handleChange(checked);
+                        }}
+                        disabled={isNoStore()}
+                      >
+                        <div class="flex items-center space-x-2">
+                          <CheckboxControl />
+                          <CheckboxLabel class="text-sm leading-none font-medium">
+                            Immutable
+                          </CheckboxLabel>
+                        </div>
+                      </Checkbox>
+                    </div>
+                    <div class="mt-2 ml-6">
+                      <p class="text-sm">
+                        Prevents unnecessary revalidation specifically during page reload/refresh. While browsers normally use cached responses during navigation, they typically revalidate all resources when a user explicitly refreshes the page. This directive tells browsers "don't revalidate even on refresh."
+                      </p>
+                    </div>
+                  </>
                 )}
               </form.Field>
-
-              <p class="text-muted-foreground text-sm">
-                {directives.immutable.description}
-              </p>
 
               {formState().values.immutable && (
                 <>
@@ -750,12 +421,15 @@ export const GenerateForm: Component<{
                     <AlertDescription>
                       <ul class="list-disc space-y-1 pl-4">
                         <li>
-                          <strong>Browsers:</strong> Supported in Chrome,
-                          Firefox, and Edge, but has inconsistent support in
-                          Safari
+                          <strong>CDNs:</strong> Cloudflare (Enterprise),
+                          Fastly, Akamai
                         </li>
                         <li>
-                          <strong>Required:</strong> HTTP/2 or newer protocol
+                          <strong>Not native:</strong> AWS CloudFront
+                        </li>
+                        <li>
+                          <strong>Browsers:</strong> Chrome, Firefox, Edge;
+                          limited Safari
                         </li>
                       </ul>
                     </AlertDescription>
@@ -827,14 +501,16 @@ export const GenerateForm: Component<{
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">
-                            This is the default behavior; the cache uses the
-                            response if within its freshness period.
+                          <p class="text-sm whitespace-pre-line">
+                            This is the default browser behavior for normal navigation. Browsers use cached responses within their freshness period without checking with the server.
                           </p>
                           <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
                             Caches can serve the response directly without
                             contacting the origin server as long as it's within
                             the max-age timeframe.
+                          </p>
+                          <p class="text-muted-foreground mt-2 text-xs italic">
+                            Note: During page refresh/reload, browsers typically still check with the server even for fresh responses. To prevent this, use the 'immutable' directive in the Freshness Duration section.
                           </p>
                         </div>
                       </div>
@@ -857,7 +533,7 @@ export const GenerateForm: Component<{
                           </span>
                         </label>
                         <div class="mt-2 ml-6">
-                          <p class="text-sm">
+                          <p class="text-sm whitespace-pre-line">
                             Requires checking with the server before using any
                             cached response.
                             <strong> Note:</strong> This does NOT mean "don't
@@ -1254,6 +930,44 @@ const SectionDescription: Component<{ title: string; description: string }> = (
     <div class="mb-3">
       <h3 class="text-primary text-lg font-medium">{props.title}</h3>
       <p class="text-muted-foreground mt-1 text-sm">{props.description}</p>
+    </div>
+  );
+};
+
+type RadioOptionProps = {
+  name: string;
+  value: string;
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  description: string;
+  disabled?: boolean;
+  additionalContent?: JSX.Element;
+};
+
+const RadioOption: Component<RadioOptionProps> = (props) => {
+  return (
+    <div>
+      <label class="flex items-center space-x-2">
+        <input
+          type="radio"
+          name={props.name}
+          value={props.value}
+          checked={props.checked}
+          onChange={props.onChange}
+          disabled={props.disabled}
+          class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+        />
+        <span class="text-sm leading-none font-medium">
+          {props.label}
+        </span>
+      </label>
+      <div class="mt-2 ml-6">
+        <p class="text-sm whitespace-pre-line">
+          {props.description}
+        </p>
+        {props.additionalContent}
+      </div>
     </div>
   );
 };

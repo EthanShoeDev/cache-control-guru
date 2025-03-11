@@ -46,25 +46,27 @@ type CommonPatternItemProps = {
 
 const CommonPatternItem: Component<CommonPatternItemProps> = (props) => {
   return (
-    <li>
+    <li class="mb-2">
       <Tooltip>
         <TooltipTrigger>
           <Button
             variant="outline"
             size="sm"
-            class="w-full justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+            class="w-full h-auto justify-start px-4 py-3 transition-all duration-200 border border-secondary rounded-md shadow-sm hover:shadow-md hover:border-primary/30 hover:bg-primary/5 dark:border-secondary dark:hover:border-primary/20 dark:hover:bg-primary/10"
             onClick={props.onClick}
           >
-            <div class="text-left">
-              <div class="text-sm font-medium">{props.title}</div>
-              <div class="text-muted-foreground mt-1 font-mono text-xs">
-                {props.value}
-              </div>
+            <div class="w-full text-left">
+              <div class="text-sm font-semibold text-foreground">{props.title}</div>
             </div>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p class="max-w-xs">{props.tooltip}</p>
+          <div class="flex flex-col gap-2 max-w-xs">
+            <p class="text-sm">{props.tooltip}</p>
+            <div class="font-mono text-xs px-2 py-1 bg-muted rounded text-muted-foreground overflow-hidden">
+              {props.value}
+            </div>
+          </div>
         </TooltipContent>
       </Tooltip>
     </li>
@@ -116,7 +118,7 @@ function RouteComponent() {
           </p>
         </div>
 
-        <div class="mx-auto max-w-2xl">
+        <div class="mx-auto max-w-3xl">
           <div class="space-y-4">
             <div class="space-y-3">
               <div class="flex flex-col space-y-2">
@@ -148,7 +150,7 @@ function RouteComponent() {
                     setTextInputHeaderValue(e.currentTarget.value)
                   }
                   placeholder="e.g. max-age=3600, no-cache, public"
-                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] w-full resize-y rounded-md border bg-transparent px-3 py-2 font-mono text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] text-lg w-full resize-y rounded-md border bg-transparent px-3 py-2 font-mono shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 
@@ -172,7 +174,7 @@ function RouteComponent() {
               <h3 class="text-muted-foreground text-sm font-medium">
                 Common Patterns:
               </h3>
-              <ul class="space-y-3">
+              <ul class="flex flex-wrap gap-2">
                 <CommonPatternItem
                   title="Static assets (hash filenames)"
                   value="max-age=31536000, immutable"

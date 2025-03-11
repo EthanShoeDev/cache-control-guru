@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@10.6.2",
   "scripts": {
-    "dev": "vinxi dev",
+    "dev": "vinxi dev --port 3005",
     "build": "vinxi build",
     "start": "vinxi start",
     "fmt": "SORT_IMPORTS=true prettier --cache --write .",

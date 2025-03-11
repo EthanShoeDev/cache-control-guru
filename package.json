@@ -3,6 +3,16 @@
   "description": "A quick and simple website to help generate and explain cache-control headers.",
   "type": "module",
   "packageManager": "pnpm@10.6.2",
+  "homepage": "https://www.cache-control-guru.com/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EthanShoeDev/cache-control-guru.git"
+  },
+  "author": {
+    "name": "Ethan Shoe Dev",
+    "email": "13422990+EthanShoeDev@users.noreply.github.com"
+  },
+  "license": "MIT",
   "scripts": {
     "dev": "vinxi dev --port 3005",
     "build": "vinxi build",

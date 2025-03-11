@@ -57,6 +57,24 @@ function RouteComponent() {
               </li>
             </ul>
 
+            <h2>Project Background</h2>
+            <p>
+              This project was created as an opportunity to explore and learn
+              SolidStart, along with experimenting with modern AI tools like
+              Cursor and Claude Code.
+            </p>
+            <p>
+              Visit the live site at{' '}
+              <a
+                href="https://www.cache-control-guru.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary hover:underline"
+              >
+                https://www.cache-control-guru.com/
+              </a>
+            </p>
+
             <h2>Inspiration</h2>
             <p>
               This project was inspired by tools like{' '}

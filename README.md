@@ -4,6 +4,8 @@
 
 A web application that helps you understand and generate HTTP Cache-Control headers with ease.
 
+**Visit the live site: [https://www.cache-control-guru.com/](https://www.cache-control-guru.com/)**
+
 ## 🚀 Features
 
 - **Explain Mode**: Paste in any Cache-Control header and get a detailed explanation of each directive
@@ -30,9 +32,6 @@ pnpm run dev
 
 # Build for production
 pnpm run build
-
-# Start the production server
-pnpm run start
 ```
 
 ## 📝 Understanding Cache-Control
@@ -55,6 +54,10 @@ This project was inspired by user-friendly tools that simplify complex technical
 
 - [crontab.guru](https://crontab.guru/) - The cron schedule expression editor
 - [kurtextrem.de/cache](https://kurtextrem.de/cache) - Cache-Control header builder
+
+## 🔎 About This Project
+
+This project was created to explore and learn SolidStart, along with experimenting with modern AI tools like Cursor and Claude Code.
 
 ## 📖 Resources
 

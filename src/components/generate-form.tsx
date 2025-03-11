@@ -3,7 +3,6 @@ import {
   TimeInput,
   type TimeUnit,
 } from '@/components/time-input';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -16,6 +15,12 @@ import { directives, parseCacheControlHeader } from '@/lib/cache-control';
 import { cn } from '@/lib/utils';
 import { createForm, formOptions } from '@tanstack/solid-form';
 import { createEffect, type Component, type JSX } from 'solid-js';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './ui/accordion';
 
 type TimeDirective = {
   enabled: boolean;
@@ -36,35 +41,37 @@ type FormSchema = {
   staleIfError: TimeDirective;
 };
 
+const defaultValues: FormSchema = {
+  cacheType: 'public',
+  freshBehavior: 'default',
+  mustRevalidate: false,
+  proxyRevalidate: false,
+  immutable: false,
+  noTransform: false,
+  maxAge: {
+    enabled: false,
+    value: 3600,
+    unit: 'seconds' as TimeUnit,
+  },
+  sMaxAge: {
+    enabled: false,
+    value: 3600,
+    unit: 'seconds' as TimeUnit,
+  },
+  staleWhileRevalidate: {
+    enabled: false,
+    value: 60,
+    unit: 'seconds' as TimeUnit,
+  },
+  staleIfError: {
+    enabled: false,
+    value: 300,
+    unit: 'seconds' as TimeUnit,
+  },
+};
+
 const formOpts = formOptions({
-  defaultValues: {
-    cacheType: 'public',
-    freshBehavior: 'default',
-    mustRevalidate: false,
-    proxyRevalidate: false,
-    immutable: false,
-    noTransform: false,
-    maxAge: {
-      enabled: false,
-      value: 3600,
-      unit: 'seconds' as TimeUnit,
-    },
-    sMaxAge: {
-      enabled: false,
-      value: 3600,
-      unit: 'seconds' as TimeUnit,
-    },
-    staleWhileRevalidate: {
-      enabled: false,
-      value: 60,
-      unit: 'seconds' as TimeUnit,
-    },
-    staleIfError: {
-      enabled: false,
-      value: 300,
-      unit: 'seconds' as TimeUnit,
-    },
-  } as FormSchema,
+  defaultValues: structuredClone(defaultValues),
 });
 
 const formSchemaToHeaderString = (values: FormSchema) => {
@@ -259,188 +266,240 @@ export const GenerateForm: Component<{
   };
 
   return (
-    <div class={cn('space-y-6', props.class)}>
-      <div class="space-y-6">
-        <div>
-          <SectionDescription
-            title="1. Cache Type"
-            description="Determines which caches can store the response."
-          />
-          <Card class="space-y-4 p-4">
-            <div class="space-y-3">
-              <div class="flex flex-col gap-4">
-                <form.Field name="cacheType">
+    <>
+      <div class="border-border border-t pt-6">
+        <div class="flex justify-between">
+          <h2 class="mb-4 text-xl font-semibold">Configure Options</h2>
+          <Button
+            variant="outline"
+            onClick={() => {
+              console.log('resetting to defaults', defaultValues);
+              form.reset(defaultValues);
+              props.setTextInputHeaderValue(
+                formSchemaToHeaderString(defaultValues),
+              );
+            }}
+            class="text-sm"
+          >
+            Reset to Defaults
+          </Button>
+        </div>
+        <div class={cn('space-y-6', props.class)}>
+          <div class="space-y-6">
+            <div>
+              <SectionDescription
+                title="1. Cache Type"
+                description="Determines which caches can store the response."
+              />
+              <Card class="space-y-4 p-4">
+                <div class="space-y-3">
+                  <div class="flex flex-col gap-4">
+                    <form.Field name="cacheType">
+                      {(field) => (
+                        <>
+                          <RadioOption
+                            name="cacheType"
+                            value="public"
+                            checked={field().state.value === 'public'}
+                            onChange={() => {
+                              field().handleChange('public');
+                            }}
+                            label="Public"
+                            description={directives.public.description}
+                          />
+                          <RadioOption
+                            name="cacheType"
+                            value="private"
+                            checked={field().state.value === 'private'}
+                            onChange={() => {
+                              field().handleChange('private');
+                            }}
+                            label="Private"
+                            description={directives.private.description}
+                          />
+                          <RadioOption
+                            name="cacheType"
+                            value="no-store"
+                            checked={field().state.value === 'no-store'}
+                            onChange={() => {
+                              field().handleChange('no-store');
+                            }}
+                            label="No Caching (no-store)"
+                            description={directives['no-store'].description}
+                          />
+                        </>
+                      )}
+                    </form.Field>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <div class={isNoStore() ? 'opacity-50' : ''}>
+              <SectionDescription
+                title="2. Freshness Duration"
+                description="Controls how long the response can be used before it becomes stale and potentially needs revalidation."
+              />
+              <Card class="space-y-4 p-4">
+                <form.Field
+                  name="maxAge"
+                  validators={{
+                    onChange: ({ value }) => ageDirectiveValidators(value),
+                  }}
+                >
                   {(field) => (
-                    <>
-                      <RadioOption
-                        name="cacheType"
-                        value="public"
-                        checked={field().state.value === 'public'}
-                        onChange={() => {
-                          field().handleChange('public');
+                    <div>
+                      <TimeInput
+                        label="Max Age"
+                        value={field().state.value.value}
+                        unit={field().state.value.unit}
+                        enabled={field().state.value.enabled}
+                        onValueChange={(value) => {
+                          field().handleChange({
+                            ...field().state.value,
+                            value,
+                          });
                         }}
-                        label="Public"
-                        description={directives.public.description}
-                      />
-                      <RadioOption
-                        name="cacheType"
-                        value="private"
-                        checked={field().state.value === 'private'}
-                        onChange={() => {
-                          field().handleChange('private');
+                        onUnitChange={(unit) => {
+                          field().handleChange({
+                            ...field().state.value,
+                            unit,
+                          });
                         }}
-                        label="Private"
-                        description={directives.private.description}
-                      />
-                      <RadioOption
-                        name="cacheType"
-                        value="no-store"
-                        checked={field().state.value === 'no-store'}
-                        onChange={() => {
-                          field().handleChange('no-store');
+                        onEnabledChange={(enabled) => {
+                          field().handleChange({
+                            ...field().state.value,
+                            enabled,
+                          });
                         }}
-                        label="No Caching (no-store)"
-                        description={directives['no-store'].description}
+                        description={`${directives['max-age'].description} After this time, the cache must revalidate the response with the server.`}
+                        disabled={isNoStore()}
                       />
-                    </>
+                      {field().state.meta.errors.join(', ') && (
+                        <em role="alert">
+                          {field().state.meta.errors.join(', ')}
+                        </em>
+                      )}
+                    </div>
                   )}
                 </form.Field>
-              </div>
-            </div>
-          </Card>
-        </div>
 
-        <div class={isNoStore() ? 'opacity-50' : ''}>
-          <SectionDescription
-            title="2. Freshness Duration"
-            description="Controls how long the response can be used before it becomes stale and potentially needs revalidation."
-          />
-          <Card class="space-y-4 p-4">
-            <form.Field
-              name="maxAge"
-              validators={{
-                onChange: ({ value }) => ageDirectiveValidators(value),
-              }}
-            >
-              {(field) => (
-                <div>
-                  <TimeInput
-                    label="Max Age"
-                    value={field().state.value.value}
-                    unit={field().state.value.unit}
-                    enabled={field().state.value.enabled}
-                    onValueChange={(value) => {
-                      field().handleChange({ ...field().state.value, value });
-                    }}
-                    onUnitChange={(unit) => {
-                      field().handleChange({ ...field().state.value, unit });
-                    }}
-                    onEnabledChange={(enabled) => {
-                      field().handleChange({ ...field().state.value, enabled });
-                    }}
-                    description={`${directives['max-age'].description} After this time, the cache must revalidate the response with the server.`}
-                    disabled={isNoStore()}
-                  />
-                  {field().state.meta.errors.join(', ') && (
-                    <em role="alert">{field().state.meta.errors.join(', ')}</em>
-                  )}
-                </div>
-              )}
-            </form.Field>
-
-            <form.Field
-              name="sMaxAge"
-              validators={{
-                onChange: ({ value }) => ageDirectiveValidators(value),
-              }}
-            >
-              {(field) => (
-                <div>
-                  <TimeInput
-                    label="Shared Max Age (s-maxage)"
-                    value={field().state.value.value}
-                    unit={field().state.value.unit}
-                    enabled={field().state.value.enabled}
-                    onValueChange={(value) => {
-                      field().handleChange({ ...field().state.value, value });
-                    }}
-                    onUnitChange={(unit) => {
-                      field().handleChange({ ...field().state.value, unit });
-                    }}
-                    onEnabledChange={(enabled) => {
-                      field().handleChange({ ...field().state.value, enabled });
-                    }}
-                    description={`${directives['s-maxage'].description} Allows setting a different freshness duration for shared caches like CDNs.`}
-                    disabled={
-                      isNoStore() || formState().values.cacheType === 'private'
-                    }
-                  />
-                </div>
-              )}
-            </form.Field>
-
-            {formState().values.cacheType === 'private' && (
-              <p class="mt-1 text-sm text-yellow-600 dark:text-yellow-500">
-                s-maxage is only available with Public cache type
-              </p>
-            )}
-
-            <div class="space-y-2">
-              <form.Field name="immutable">
-                {(field) => (
-                  <>
-                    <div class="flex items-center space-x-2">
-                      <Checkbox
-                        checked={field().state.value}
-                        onChange={(checked) => {
-                          field().handleChange(checked);
+                <form.Field
+                  name="sMaxAge"
+                  validators={{
+                    onChange: ({ value }) => ageDirectiveValidators(value),
+                  }}
+                >
+                  {(field) => (
+                    <div>
+                      <TimeInput
+                        label="Shared Max Age (s-maxage)"
+                        value={field().state.value.value}
+                        unit={field().state.value.unit}
+                        enabled={field().state.value.enabled}
+                        onValueChange={(value) => {
+                          field().handleChange({
+                            ...field().state.value,
+                            value,
+                          });
                         }}
-                        disabled={isNoStore()}
-                      >
-                        <div class="flex items-center space-x-2">
-                          <CheckboxControl />
-                          <CheckboxLabel class="text-sm leading-none font-medium">
-                            Immutable
-                          </CheckboxLabel>
-                        </div>
-                      </Checkbox>
+                        onUnitChange={(unit) => {
+                          field().handleChange({
+                            ...field().state.value,
+                            unit,
+                          });
+                        }}
+                        onEnabledChange={(enabled) => {
+                          field().handleChange({
+                            ...field().state.value,
+                            enabled,
+                          });
+                        }}
+                        description={`${directives['s-maxage'].description} Allows setting a different freshness duration for shared caches like CDNs.`}
+                        disabled={
+                          isNoStore() ||
+                          formState().values.cacheType === 'private'
+                        }
+                      />
                     </div>
-                    <div class="mt-2 ml-6">
-                      <p class="text-sm">
-                        Prevents unnecessary revalidation specifically during
-                        page reload/refresh. While browsers normally use cached
-                        responses during navigation, they typically revalidate
-                        all resources when a user explicitly refreshes the page.
-                        This directive tells browsers "don't revalidate even on
-                        refresh."
-                      </p>
-                    </div>
-                  </>
+                  )}
+                </form.Field>
+
+                {formState().values.cacheType === 'private' && (
+                  <p class="mt-1 text-sm text-yellow-600 dark:text-yellow-500">
+                    s-maxage is only available with Public cache type
+                  </p>
                 )}
-              </form.Field>
 
-              {formState().values.immutable && (
-                <>
-                  <Alert variant="warning" class="mt-2">
-                    <AlertTitle>Support Information:</AlertTitle>
-                    <AlertDescription>
-                      <ul class="list-disc space-y-1 pl-4">
-                        <li>
-                          <strong>CDNs:</strong> Cloudflare (Enterprise),
-                          Fastly, Akamai
-                        </li>
-                        <li>
-                          <strong>Not native:</strong> AWS CloudFront
-                        </li>
-                        <li>
-                          <strong>Browsers:</strong> Chrome, Firefox, Edge;
-                          limited Safari
-                        </li>
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-
-                  <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                <div class="space-y-2">
+                  <form.Field name="immutable">
+                    {(field) => (
+                      <>
+                        <div class="flex items-center space-x-2">
+                          <Checkbox
+                            checked={field().state.value}
+                            onChange={(checked) => {
+                              field().handleChange(checked);
+                            }}
+                            disabled={isNoStore()}
+                          >
+                            <div class="flex items-center space-x-2">
+                              <CheckboxControl />
+                              <CheckboxLabel class="text-sm leading-none font-medium">
+                                Immutable
+                              </CheckboxLabel>
+                            </div>
+                          </Checkbox>
+                        </div>
+                        <div class="mt-2 ml-6">
+                          <p class="text-sm">
+                            Prevents unnecessary revalidation specifically
+                            during page reload/refresh. While browsers normally
+                            use cached responses during navigation, they
+                            typically revalidate all resources when a user
+                            explicitly refreshes the page. This directive tells
+                            browsers "don't revalidate even on refresh."
+                          </p>
+                          <Accordion multiple={false} collapsible>
+                            <AccordionItem value="item-1">
+                              <AccordionTrigger>
+                                Immutable best practices
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">
+                                  <strong>Only</strong> use with files that have
+                                  content-based hashes in their filenames (cache
+                                  busting):
+                                </p>
+                                <ul class="mt-2 list-disc pl-5 text-sm text-blue-700 dark:text-blue-400">
+                                  <li>
+                                    Good: <code>/assets/main.a7e9f32.js</code>,{' '}
+                                    <code>/images/logo.34def12.png</code>
+                                  </li>
+                                  <li>
+                                    Bad: <code>/assets/main.js?v=123</code>,{' '}
+                                    <code>/images/logo.png</code>
+                                  </li>
+                                </ul>
+                                <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                                  <strong>Example:</strong>{' '}
+                                  <code>
+                                    Cache-Control: max-age=31536000, immutable
+                                  </code>
+                                </p>
+                                <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                                  This tells browsers "this resource will never
+                                  change, so don't bother checking for updates,
+                                  even when the user refreshes the page."
+                                </p>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      </>
+                    )}
+                  </form.Field>
+                  {/* <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
                     <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
                       Best practice for immutable:
                     </h4>
@@ -467,470 +526,445 @@ export const GenerateForm: Component<{
                       don't bother checking for updates, even when the user
                       refreshes the page."
                     </p>
-                  </div>
-                </>
-              )}
+                  </div> */}
+                </div>
+              </Card>
             </div>
-          </Card>
-        </div>
 
-        <div class={isNoStore() ? 'opacity-50' : ''}>
-          <SectionDescription
-            title="3. Cache Behavior for Fresh Responses"
-            description="Controls whether fresh responses (within their freshness lifetime) can be used without checking with the server first."
-          />
-          <Card class="space-y-4 p-4">
-            <div class="space-y-3">
-              <p class="text-sm font-medium">
-                How should caches handle responses that are still fresh?
-              </p>
-              <div class="flex flex-col gap-4">
-                <form.Field name="freshBehavior">
-                  {(field) => (
-                    <>
-                      <div>
-                        <label class="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="freshBehavior"
-                            value="default"
-                            checked={field().state.value === 'default'}
-                            onChange={() => {
-                              field().handleChange('default');
-                            }}
-                            disabled={isNoStore()}
-                            class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                          />
-                          <span class="text-sm leading-none font-medium">
-                            Use fresh responses without revalidation
-                          </span>
-                        </label>
-                        <div class="mt-2 ml-6">
-                          <p class="text-sm whitespace-pre-line">
-                            This is the default browser behavior for normal
-                            navigation. Browsers use cached responses within
-                            their freshness period without checking with the
-                            server.
-                          </p>
-                          <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                            Caches can serve the response directly without
-                            contacting the origin server as long as it's within
-                            the max-age timeframe.
-                          </p>
-                          <p class="text-muted-foreground mt-2 text-xs italic">
-                            Note: During page refresh/reload, browsers typically
-                            still check with the server even for fresh
-                            responses. To prevent this, use the 'immutable'
-                            directive in the Freshness Duration section.
-                          </p>
-                        </div>
-                      </div>
+            <div class={isNoStore() ? 'opacity-50' : ''}>
+              <SectionDescription
+                title="3. Cache Behavior for Fresh Responses"
+                description="Controls whether fresh responses (within their freshness lifetime) can be used without checking with the server first."
+              />
+              <Card class="space-y-4 p-4">
+                <div class="space-y-3">
+                  <p class="text-sm font-medium">
+                    How should caches handle responses that are still fresh?
+                  </p>
+                  <div class="flex flex-col gap-4">
+                    <form.Field name="freshBehavior">
+                      {(field) => (
+                        <>
+                          <div>
+                            <label class="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                name="freshBehavior"
+                                value="default"
+                                checked={field().state.value === 'default'}
+                                onChange={() => {
+                                  field().handleChange('default');
+                                }}
+                                disabled={isNoStore()}
+                                class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                              />
+                              <span class="text-sm leading-none font-medium">
+                                Use fresh responses without revalidation
+                              </span>
+                            </label>
+                            <div class="mt-2 ml-6">
+                              <p class="text-sm whitespace-pre-line">
+                                This is the default browser behavior for normal
+                                navigation. Browsers use cached responses within
+                                their freshness period without checking with the
+                                server.
+                              </p>
+                              <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                                Caches can serve the response directly without
+                                contacting the origin server as long as it's
+                                within the max-age timeframe.
+                              </p>
+                              <p class="text-muted-foreground mt-2 text-xs italic">
+                                Note: During page refresh/reload, browsers
+                                typically still check with the server even for
+                                fresh responses. To prevent this, use the
+                                'immutable' directive in the Freshness Duration
+                                section.
+                              </p>
+                            </div>
+                          </div>
 
-                      <div>
-                        <label class="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="freshBehavior"
-                            value="no-cache"
-                            checked={field().state.value === 'no-cache'}
-                            onChange={() => {
-                              field().handleChange('no-cache');
-                            }}
-                            disabled={isNoStore()}
-                            class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
-                          />
-                          <span class="text-sm leading-none font-medium">
-                            Always revalidate responses (no-cache)
-                          </span>
-                        </label>
-                        <div class="mt-2 ml-6">
-                          <p class="text-sm whitespace-pre-line">
-                            Requires checking with the server before using any
-                            cached response.
-                            <strong> Note:</strong> This does NOT mean "don't
-                            cache" - the browser will still store the response,
-                            but must validate it before use. For content that
-                            should never be stored, use "no-store" instead.
-                          </p>
+                          <div>
+                            <label class="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                name="freshBehavior"
+                                value="no-cache"
+                                checked={field().state.value === 'no-cache'}
+                                onChange={() => {
+                                  field().handleChange('no-cache');
+                                }}
+                                disabled={isNoStore()}
+                                class="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                              />
+                              <span class="text-sm leading-none font-medium">
+                                Always revalidate responses (no-cache)
+                              </span>
+                            </label>
+                            <div class="mt-2 ml-6">
+                              <p class="text-sm whitespace-pre-line">
+                                Requires checking with the server before using
+                                any cached response.
+                                <strong> Note:</strong> This does NOT mean
+                                "don't cache" - the browser will still store the
+                                response, but must validate it before use. For
+                                content that should never be stored, use
+                                "no-store" instead.
+                              </p>
 
+                              {/* <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                                <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
+                                  How no-cache works:
+                                </h4>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">
+                                  1. Browser has a cached response
+                                </p>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">
+                                  2. User requests the page
+                                </p>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">
+                                  3. Browser MUST check with the server first
+                                  (sends validation request with
+                                  If-None-Match/If-Modified-Since)
+                                </p>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">
+                                  4. Server responds with 304 Not Modified OR
+                                  new content
+                                </p>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">
+                                  5. Only after this validation does the browser
+                                  show the content
+                                </p>
+                              </div> */}
+                              <Accordion multiple={false} collapsible>
+                                <AccordionItem value="item-1">
+                                  <AccordionTrigger>
+                                    How no-cache works:
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                                      1. Browser has a cached response
+                                    </p>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                                      2. User requests the page
+                                    </p>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                                      3. Browser MUST check with the server
+                                      first (sends validation request with
+                                      If-None-Match/If-Modified-Since)
+                                    </p>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                                      4. Server responds with 304 Not Modified
+                                      OR new content
+                                    </p>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                                      5. Only after this validation does the
+                                      browser show the content
+                                    </p>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              </Accordion>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </form.Field>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <div class={isNoStore() ? 'opacity-50' : ''}>
+              <SectionDescription
+                title="4. Cache Behavior for Stale Responses"
+                description="Controls how caches handle responses after they've become stale (exceeded their freshness lifetime)."
+              />
+              <Card class="space-y-4 p-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="space-y-3">
+                    <form.Field name="mustRevalidate">
+                      {(field) => (
+                        <>
+                          <div class="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field().state.value}
+                              onChange={(checked) => {
+                                field().handleChange(checked);
+                              }}
+                              disabled={isNoStore()}
+                            >
+                              <div class="flex items-center space-x-2">
+                                <CheckboxControl />
+                                <CheckboxLabel class="text-sm leading-none font-medium">
+                                  Must Revalidate
+                                </CheckboxLabel>
+                              </div>
+                            </Checkbox>
+                          </div>
+                          <div class="mt-2 ml-6">
+                            <p class="text-sm">
+                              {directives['must-revalidate'].description}
+                            </p>
+                            <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                              Ensures that stale responses are not used without
+                              checking with the server, improving accuracy.
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </form.Field>
+                  </div>
+
+                  <div class="space-y-3">
+                    <form.Field name="proxyRevalidate">
+                      {(field) => (
+                        <>
+                          <div class="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field().state.value}
+                              onChange={(checked) => {
+                                field().handleChange(checked);
+                              }}
+                              disabled={
+                                isNoStore() ||
+                                formState().values.cacheType === 'private'
+                              }
+                            >
+                              <div class="flex items-center space-x-2">
+                                <CheckboxControl />
+                                <CheckboxLabel class="text-sm leading-none font-medium">
+                                  Proxy Revalidate
+                                </CheckboxLabel>
+                              </div>
+                            </Checkbox>
+                          </div>
+                          <div class="mt-2 ml-6">
+                            <p class="text-sm">
+                              {directives['proxy-revalidate'].description}
+                            </p>
+                            <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
+                              Allows private caches to serve stale responses
+                              while requiring shared caches to revalidate.
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </form.Field>
+
+                    {formState().values.cacheType === 'private' && (
+                      <p class="text-sm text-yellow-600 dark:text-yellow-500">
+                        Only available with Public cache type
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div class="border-border mt-2 space-y-3 border-t pt-2">
+                  <h4 class="font-medium text-gray-700 dark:text-gray-300">
+                    Advanced Staleness Options
+                  </h4>
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <form.Field name="staleWhileRevalidate" validators={{}}>
+                        {(field) => (
+                          <div>
+                            <TimeInput
+                              label="Stale While Revalidate"
+                              value={field().state.value.value}
+                              unit={field().state.value.unit}
+                              enabled={field().state.value.enabled}
+                              onValueChange={(value) => {
+                                field().handleChange({
+                                  ...field().state.value,
+                                  value,
+                                });
+                              }}
+                              onUnitChange={(unit) => {
+                                field().handleChange({
+                                  ...field().state.value,
+                                  unit,
+                                });
+                              }}
+                              onEnabledChange={(enabled) => {
+                                field().handleChange({
+                                  ...field().state.value,
+                                  enabled,
+                                });
+                              }}
+                              description="Allows serving stale content while revalidating in the background. When a cached response becomes stale, it returns the stale response immediately while fetching a fresh copy."
+                              disabled={isNoStore()}
+                            />
+                          </div>
+                        )}
+                      </form.Field>
+
+                      {formState().values.staleWhileRevalidate.enabled && (
+                        <>
                           <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
                             <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
-                              How no-cache works:
+                              How it works (vs no-cache):
                             </h4>
                             <p class="text-sm text-blue-700 dark:text-blue-400">
-                              1. Browser has a cached response
+                              1. Return stale content immediately to user (no
+                              waiting)
                             </p>
                             <p class="text-sm text-blue-700 dark:text-blue-400">
-                              2. User requests the page
+                              2. Fetch fresh version in background
                             </p>
                             <p class="text-sm text-blue-700 dark:text-blue-400">
-                              3. Browser MUST check with the server first (sends
-                              validation request with
-                              If-None-Match/If-Modified-Since)
+                              3. Update cache for future requests
                             </p>
-                            <p class="text-sm text-blue-700 dark:text-blue-400">
-                              4. Server responds with 304 Not Modified OR new
-                              content
-                            </p>
-                            <p class="text-sm text-blue-700 dark:text-blue-400">
-                              5. Only after this validation does the browser
-                              show the content
+                            <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                              <strong>Key difference from no-cache:</strong>{' '}
+                              User doesn't wait for revalidation (prioritizes
+                              speed over freshness)
                             </p>
                           </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </form.Field>
-              </div>
-            </div>
-          </Card>
-        </div>
+                        </>
+                      )}
+                    </div>
 
-        <div class={isNoStore() ? 'opacity-50' : ''}>
-          <SectionDescription
-            title="4. Cache Behavior for Stale Responses"
-            description="Controls how caches handle responses after they've become stale (exceeded their freshness lifetime)."
-          />
-          <Card class="space-y-4 p-4">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div class="space-y-3">
-                <form.Field name="mustRevalidate">
-                  {(field) => (
-                    <>
-                      <div class="flex items-center space-x-2">
-                        <Checkbox
-                          checked={field().state.value}
-                          onChange={(checked) => {
-                            field().handleChange(checked);
-                          }}
-                          disabled={isNoStore()}
-                        >
-                          <div class="flex items-center space-x-2">
-                            <CheckboxControl />
-                            <CheckboxLabel class="text-sm leading-none font-medium">
-                              Must Revalidate
-                            </CheckboxLabel>
+                    <div>
+                      <form.Field name="staleIfError">
+                        {(field) => (
+                          <div>
+                            <TimeInput
+                              label="Stale If Error"
+                              value={field().state.value.value}
+                              unit={field().state.value.unit}
+                              enabled={field().state.value.enabled}
+                              onValueChange={(value) => {
+                                field().handleChange({
+                                  ...field().state.value,
+                                  value,
+                                });
+                              }}
+                              onUnitChange={(unit) => {
+                                field().handleChange({
+                                  ...field().state.value,
+                                  unit,
+                                });
+                              }}
+                              onEnabledChange={(enabled) => {
+                                field().handleChange({
+                                  ...field().state.value,
+                                  enabled,
+                                });
+                              }}
+                              description="Allows serving stale content when server returns errors (5xx), improving reliability during outages."
+                              disabled={isNoStore()}
+                            />
                           </div>
-                        </Checkbox>
-                      </div>
-                      <div class="mt-2 ml-6">
-                        <p class="text-sm">
-                          {directives['must-revalidate'].description}
-                        </p>
-                        <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                          Ensures that stale responses are not used without
-                          checking with the server, improving accuracy.
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </form.Field>
-              </div>
+                        )}
+                      </form.Field>
 
-              <div class="space-y-3">
-                <form.Field name="proxyRevalidate">
-                  {(field) => (
-                    <>
-                      <div class="flex items-center space-x-2">
-                        <Checkbox
-                          checked={field().state.value}
-                          onChange={(checked) => {
-                            field().handleChange(checked);
-                          }}
-                          disabled={
-                            isNoStore() ||
-                            formState().values.cacheType === 'private'
-                          }
-                        >
-                          <div class="flex items-center space-x-2">
-                            <CheckboxControl />
-                            <CheckboxLabel class="text-sm leading-none font-medium">
-                              Proxy Revalidate
-                            </CheckboxLabel>
+                      {formState().values.staleIfError.enabled && (
+                        <>
+                          <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                            <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
+                              How it works:
+                            </h4>
+                            <p class="text-sm text-blue-700 dark:text-blue-400">
+                              Serves stale content when server returns errors
+                              (5xx), improving reliability during outages.
+                            </p>
                           </div>
-                        </Checkbox>
-                      </div>
-                      <div class="mt-2 ml-6">
-                        <p class="text-sm">
-                          {directives['proxy-revalidate'].description}
-                        </p>
-                        <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                          Allows private caches to serve stale responses while
-                          requiring shared caches to revalidate.
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </form.Field>
-
-                {formState().values.cacheType === 'private' && (
-                  <p class="text-sm text-yellow-600 dark:text-yellow-500">
-                    Only available with Public cache type
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div class="border-border mt-2 space-y-3 border-t pt-2">
-              <h4 class="font-medium text-gray-700 dark:text-gray-300">
-                Advanced Staleness Options
-              </h4>
-              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <form.Field name="staleWhileRevalidate" validators={{}}>
-                    {(field) => (
-                      <div>
-                        <TimeInput
-                          label="Stale While Revalidate"
-                          value={field().state.value.value}
-                          unit={field().state.value.unit}
-                          enabled={field().state.value.enabled}
-                          onValueChange={(value) => {
-                            field().handleChange({
-                              ...field().state.value,
-                              value,
-                            });
-                          }}
-                          onUnitChange={(unit) => {
-                            field().handleChange({
-                              ...field().state.value,
-                              unit,
-                            });
-                          }}
-                          onEnabledChange={(enabled) => {
-                            field().handleChange({
-                              ...field().state.value,
-                              enabled,
-                            });
-                          }}
-                          description="Allows serving stale content while revalidating in the background. When a cached response becomes stale, it returns the stale response immediately while fetching a fresh copy."
-                          disabled={isNoStore()}
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-
-                  {formState().values.staleWhileRevalidate.enabled && (
-                    <>
-                      <Alert variant="warning" class="mt-2">
-                        <AlertTitle>Support Information:</AlertTitle>
-                        <AlertDescription>
-                          <ul class="list-disc space-y-1 pl-4">
-                            <li>
-                              <strong>CDNs:</strong> Cloudflare (Enterprise),
-                              Fastly, Akamai
-                            </li>
-                            <li>
-                              <strong>Not native:</strong> AWS CloudFront
-                            </li>
-                            <li>
-                              <strong>Browsers:</strong> Chrome, Firefox, Edge;
-                              limited Safari
-                            </li>
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-
-                      <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
-                        <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
-                          How it works (vs no-cache):
-                        </h4>
-                        <p class="text-sm text-blue-700 dark:text-blue-400">
-                          1. Return stale content immediately to user (no
-                          waiting)
-                        </p>
-                        <p class="text-sm text-blue-700 dark:text-blue-400">
-                          2. Fetch fresh version in background
-                        </p>
-                        <p class="text-sm text-blue-700 dark:text-blue-400">
-                          3. Update cache for future requests
-                        </p>
-                        <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
-                          <strong>Key difference from no-cache:</strong> User
-                          doesn't wait for revalidation (prioritizes speed over
-                          freshness)
-                        </p>
-                      </div>
-                    </>
-                  )}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <div>
-                  <form.Field name="staleIfError">
-                    {(field) => (
-                      <div>
-                        <TimeInput
-                          label="Stale If Error"
-                          value={field().state.value.value}
-                          unit={field().state.value.unit}
-                          enabled={field().state.value.enabled}
-                          onValueChange={(value) => {
-                            field().handleChange({
-                              ...field().state.value,
-                              value,
-                            });
-                          }}
-                          onUnitChange={(unit) => {
-                            field().handleChange({
-                              ...field().state.value,
-                              unit,
-                            });
-                          }}
-                          onEnabledChange={(enabled) => {
-                            field().handleChange({
-                              ...field().state.value,
-                              enabled,
-                            });
-                          }}
-                          description="Allows serving stale content when server returns errors (5xx), improving reliability during outages."
-                          disabled={isNoStore()}
-                        />
-                      </div>
-                    )}
-                  </form.Field>
-
-                  {formState().values.staleIfError.enabled && (
-                    <>
-                      <Alert variant="warning" class="mt-2">
-                        <AlertTitle>Support Information:</AlertTitle>
-                        <AlertDescription>
-                          <ul class="list-disc space-y-1 pl-4">
-                            <li>
-                              <strong>CDNs:</strong> Cloudflare (Enterprise),
-                              Fastly, Akamai
-                            </li>
-                            <li>
-                              <strong>Not supported:</strong> AWS CloudFront
-                            </li>
-                            <li>
-                              <strong>Browsers:</strong> Limited (mainly Chrome)
-                            </li>
-                          </ul>
-                        </AlertDescription>
-                      </Alert>
-
-                      <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
-                        <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
-                          How it works:
-                        </h4>
-                        <p class="text-sm text-blue-700 dark:text-blue-400">
-                          Serves stale content when server returns errors (5xx),
-                          improving reliability during outages.
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+              </Card>
             </div>
-          </Card>
-        </div>
 
-        <div>
-          <SectionDescription
-            title="5. Other Directives"
-            description="Additional controls that can be applied to all responses regardless of cache status."
-          />
-          <Card class="space-y-4 p-4">
-            <div class="space-y-3">
-              <form.Field name="noTransform">
-                {(field) => (
-                  <>
-                    <div class="flex items-center space-x-2">
-                      <Checkbox
-                        checked={field().state.value}
-                        onChange={(checked) => {
-                          field().handleChange(checked);
-                        }}
-                      >
+            <div>
+              <SectionDescription
+                title="5. Other Directives"
+                description="Additional controls that can be applied to all responses regardless of cache status."
+              />
+              <Card class="space-y-4 p-4">
+                <div class="space-y-3">
+                  <form.Field name="noTransform">
+                    {(field) => (
+                      <>
                         <div class="flex items-center space-x-2">
-                          <CheckboxControl />
-                          <CheckboxLabel class="text-sm leading-none font-medium">
-                            No Transform
-                          </CheckboxLabel>
+                          <Checkbox
+                            checked={field().state.value}
+                            onChange={(checked) => {
+                              field().handleChange(checked);
+                            }}
+                          >
+                            <div class="flex items-center space-x-2">
+                              <CheckboxControl />
+                              <CheckboxLabel class="text-sm leading-none font-medium">
+                                No Transform
+                              </CheckboxLabel>
+                            </div>
+                          </Checkbox>
                         </div>
-                      </Checkbox>
-                    </div>
-                    <div class="mt-2 ml-6">
-                      <p class="text-sm">
-                        {directives['no-transform'].description}
-                      </p>
-                      <p class="text-muted-foreground border-primary/20 mt-1 border-l-2 pl-2 text-xs">
-                        Ensures content integrity by preventing proxies from
-                        modifying your content.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </form.Field>
+                        <div class="mt-2 ml-6">
+                          <p class="text-sm">
+                            {directives['no-transform'].description}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </form.Field>
 
-              {formState().values.noTransform && (
-                <div class="mt-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
-                  <p class="text-sm text-blue-700 dark:text-blue-400">
-                    <strong>Use Case:</strong> Add this when proxies should not
-                    compress your images, transform your JSON formats, or alter
-                    your content in any way that would change the bytes received
-                    by the client.
-                  </p>
+                  <div class="mt-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                      <strong>Use Case:</strong> Add this when proxies should
+                      not compress your images, transform your JSON formats, or
+                      alter your content in any way that would change the bytes
+                      received by the client.
+                    </p>
+                  </div>
                 </div>
-              )}
+              </Card>
             </div>
-          </Card>
-        </div>
 
-        <div class="flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => {
-              form.reset(formOpts.defaultValues);
-            }}
-            class="text-sm"
-          >
-            Reset to Defaults
-          </Button>
-        </div>
-
-        <div>
-          <Separator class="my-4" />
-          <h3 class="text-primary mb-3 text-lg font-medium">
-            Directive Interactions
-          </h3>
-          <div class="text-muted-foreground space-y-2 text-sm">
-            <p>
-              • <strong>no-store</strong> overrides all other directives; no
-              caching occurs
-            </p>
-            <p>
-              • <strong>no-cache</strong> requires revalidation even for fresh
-              responses, but still allows storing the response
-            </p>
-            <p>
-              • <strong>s-maxage</strong> only applies to shared caches
-              (relevant only for Public cache type)
-            </p>
-            <p>
-              • <strong>immutable</strong> prevents revalidation on page refresh
-              (HTTP/2+ support varies)
-            </p>
-            <p>
-              • <strong>must-revalidate</strong> requires revalidation when
-              stale
-            </p>
-            <p>
-              • <strong>max-age=0</strong> is different from{' '}
-              <strong>no-cache</strong>: max-age=0 makes content immediately
-              stale but doesn't prevent caching
-            </p>
-            <p>
-              • <strong>stale-while-revalidate</strong> and{' '}
-              <strong>stale-if-error</strong> provide grace periods for using
-              stale content
-            </p>
+            <div>
+              <Separator class="my-4" />
+              <h3 class="text-primary mb-3 text-lg font-medium">
+                Directive Interactions
+              </h3>
+              <div class="text-muted-foreground space-y-2 text-sm">
+                <p>
+                  • <strong>no-store</strong> overrides all other directives; no
+                  caching occurs
+                </p>
+                <p>
+                  • <strong>no-cache</strong> requires revalidation even for
+                  fresh responses, but still allows storing the response
+                </p>
+                <p>
+                  • <strong>s-maxage</strong> only applies to shared caches
+                  (relevant only for Public cache type)
+                </p>
+                <p>
+                  • <strong>immutable</strong> prevents revalidation on page
+                  refresh (HTTP/2+ support varies)
+                </p>
+                <p>
+                  • <strong>must-revalidate</strong> requires revalidation when
+                  stale
+                </p>
+                <p>
+                  • <strong>max-age=0</strong> is different from{' '}
+                  <strong>no-cache</strong>: max-age=0 makes content immediately
+                  stale but doesn't prevent caching
+                </p>
+                <p>
+                  • <strong>stale-while-revalidate</strong> and{' '}
+                  <strong>stale-if-error</strong> provide grace periods for
+                  using stale content
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

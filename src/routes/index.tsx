@@ -143,7 +143,7 @@ function RouteComponent() {
                         );
                       }}
                     >
-                      <Copy />
+                      <Copy class="size-4" />
                     </Button>
                   )}
                 </div>
@@ -154,7 +154,7 @@ function RouteComponent() {
                     setTextInputHeaderValue(e.currentTarget.value)
                   }
                   placeholder="e.g. max-age=3600, no-cache, public"
-                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] w-full resize-y rounded-md border bg-transparent px-3 py-2 font-mono text-lg shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] w-full resize-none rounded-md border bg-transparent px-3 py-2 font-mono text-lg shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 
@@ -258,14 +258,10 @@ function RouteComponent() {
               </div>
             </Show>
           </div>
-
-          <div class="border-border border-t pt-6">
-            <h2 class="mb-4 text-xl font-semibold">Configure Options</h2>
-            <GenerateForm
-              textInputHeaderValue={textInputHeaderValue()}
-              setTextInputHeaderValue={setTextInputHeaderValue}
-            />
-          </div>
+          <GenerateForm
+            textInputHeaderValue={textInputHeaderValue()}
+            setTextInputHeaderValue={setTextInputHeaderValue}
+          />
         </div>
       </div>
     </main>

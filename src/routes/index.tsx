@@ -3,6 +3,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   generateHeaderExplanation,
   parseCacheControlHeader,
 } from '@/lib/cache-control';
@@ -12,6 +17,7 @@ import { createFileRoute } from '@tanstack/solid-router';
 import { fallback, zodValidator } from '@tanstack/zod-adapter';
 import {
   type Accessor,
+  type Component,
   Show,
   createEffect,
   createMemo,
@@ -30,6 +36,40 @@ export const Route = createFileRoute('/')({
   component: RouteComponent,
   validateSearch: zodValidator(pageSearchParamSchema),
 });
+
+type CommonPatternItemProps = {
+  title: string;
+  value: string;
+  tooltip: string;
+  onClick: () => void;
+}
+
+const CommonPatternItem: Component<CommonPatternItemProps> = (props) => {
+  return (
+    <li>
+      <Tooltip>
+        <TooltipTrigger>
+          <Button
+            variant="outline"
+            size="sm"
+            class="w-full justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+            onClick={props.onClick}
+          >
+            <div class="text-left">
+              <div class="text-sm font-medium">{props.title}</div>
+              <div class="text-muted-foreground mt-1 font-mono text-xs">
+                {props.value}
+              </div>
+            </div>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p class="max-w-xs">{props.tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </li>
+  );
+};
 
 const LOCAL_STORAGE_KEY = 'cache-control-header';
 
@@ -101,15 +141,14 @@ function RouteComponent() {
                     </Button>
                   )}
                 </div>
-                <input
+                <textarea
                   id="cache-control-input"
-                  type="text"
                   value={textInputHeaderValue()}
                   onInput={(e) =>
                     setTextInputHeaderValue(e.currentTarget.value)
                   }
                   placeholder="e.g. max-age=3600, no-cache, public"
-                  class="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 font-mono text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  class="border-input focus-visible:ring-ring flex min-h-[4.5rem] w-full resize-y rounded-md border bg-transparent px-3 py-2 font-mono text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
 
@@ -133,106 +172,59 @@ function RouteComponent() {
               <h3 class="text-muted-foreground text-sm font-medium">
                 Common Patterns:
               </h3>
-              <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+              <ul class="space-y-3">
+                <CommonPatternItem
+                  title="Static assets (hash filenames)"
+                  value="max-age=31536000, immutable"
+                  tooltip="Set for versioned assets like main.123abc.js that won't change. Build tools like Vite automatically add hash suffixes to filenames."
                   onClick={() =>
                     setTextInputHeaderValue('max-age=31536000, immutable')
                   }
-                >
-                  <div class="text-left">
-                    <div class="text-sm font-medium">
-                      Static assets (hash filenames)
-                    </div>
-                    <div class="text-muted-foreground mt-1 font-mono text-xs">
-                      max-age=31536000, immutable
-                    </div>
-                  </div>
-                </Button>
+                />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                <CommonPatternItem
+                  title="HTML pages"
+                  value="no-cache"
+                  tooltip="Ensures browsers always check with the server before showing content, waiting for this revalidation to complete. Good for dynamic content that changes frequently."
                   onClick={() => setTextInputHeaderValue('no-cache')}
-                >
-                  <div class="text-left">
-                    <div class="text-sm font-medium">HTML pages</div>
-                    <div class="text-muted-foreground mt-1 font-mono text-xs">
-                      no-cache
-                    </div>
-                  </div>
-                </Button>
+                />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                <CommonPatternItem
+                  title="API responses"
+                  value="private, max-age=60"
+                  tooltip="Allows browsers to cache for 60 seconds, but prevents CDNs from storing these responses. Good for frequently accessed API data."
                   onClick={() => setTextInputHeaderValue('private, max-age=60')}
-                >
-                  <div class="text-left">
-                    <div class="text-sm font-medium">API responses</div>
-                    <div class="text-muted-foreground mt-1 font-mono text-xs">
-                      private, max-age=60
-                    </div>
-                  </div>
-                </Button>
+                />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                <CommonPatternItem
+                  title="Personalized content"
+                  value="private, max-age=0, must-revalidate"
+                  tooltip="Forces revalidation for each request but allows local storage. Prevents CDNs from caching user-specific content."
                   onClick={() =>
                     setTextInputHeaderValue(
                       'private, max-age=0, must-revalidate',
                     )
                   }
-                >
-                  <div class="text-left">
-                    <div class="text-sm font-medium">Personalized content</div>
-                    <div class="text-muted-foreground mt-1 font-mono text-xs">
-                      private, max-age=0, must-revalidate
-                    </div>
-                  </div>
-                </Button>
+                />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                <CommonPatternItem
+                  title="Fast updates with fallbacks"
+                  value="max-age=60, stale-while-revalidate=3600, stale-if-error=86400"
+                  tooltip="Shows stale content immediately while revalidating in background. Will use stale content for up to 24 hours during server errors."
                   onClick={() =>
                     setTextInputHeaderValue(
                       'max-age=60, stale-while-revalidate=3600, stale-if-error=86400',
                     )
                   }
-                >
-                  <div class="text-left">
-                    <div class="text-sm font-medium">
-                      Fast updates with fallbacks
-                    </div>
-                    <div class="text-muted-foreground mt-1 font-mono text-xs">
-                      max-age=60, stale-while-revalidate=3600,
-                      stale-if-error=86400
-                    </div>
-                  </div>
-                </Button>
+                />
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="h-20 justify-start border-blue-100 hover:bg-blue-50/50 dark:border-blue-900 dark:hover:bg-blue-950/30"
+                <CommonPatternItem
+                  title="Sensitive data"
+                  value="no-store"
+                  tooltip="Prevents any caching of the response. Use for sensitive information like personal data or financial details."
                   onClick={() => setTextInputHeaderValue('no-store')}
-                >
-                  <div class="text-left">
-                    <div class="text-sm font-medium">Sensitive data</div>
-                    <div class="text-muted-foreground mt-1 font-mono text-xs">
-                      no-store
-                    </div>
-                  </div>
-                </Button>
-              </div>
+                />
+              </ul>
             </div>
           </div>
         </div>

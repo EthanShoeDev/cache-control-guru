@@ -865,6 +865,31 @@ export const GenerateForm: Component<{
                             but must validate it before use. For content that
                             should never be stored, use "no-store" instead.
                           </p>
+
+                          <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                            <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
+                              How no-cache works:
+                            </h4>
+                            <p class="text-sm text-blue-700 dark:text-blue-400">
+                              1. Browser has a cached response
+                            </p>
+                            <p class="text-sm text-blue-700 dark:text-blue-400">
+                              2. User requests the page
+                            </p>
+                            <p class="text-sm text-blue-700 dark:text-blue-400">
+                              3. Browser MUST check with the server first (sends
+                              validation request with
+                              If-None-Match/If-Modified-Since)
+                            </p>
+                            <p class="text-sm text-blue-700 dark:text-blue-400">
+                              4. Server responds with 304 Not Modified OR new
+                              content
+                            </p>
+                            <p class="text-sm text-blue-700 dark:text-blue-400">
+                              5. Only after this validation does the browser
+                              show the content
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </>
@@ -1022,16 +1047,22 @@ export const GenerateForm: Component<{
 
                       <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
                         <h4 class="mb-2 font-medium text-blue-700 dark:text-blue-400">
-                          How it works:
+                          How it works (vs no-cache):
                         </h4>
                         <p class="text-sm text-blue-700 dark:text-blue-400">
-                          1. Return stale content immediately
+                          1. Return stale content immediately to user (no
+                          waiting)
                         </p>
                         <p class="text-sm text-blue-700 dark:text-blue-400">
                           2. Fetch fresh version in background
                         </p>
                         <p class="text-sm text-blue-700 dark:text-blue-400">
                           3. Update cache for future requests
+                        </p>
+                        <p class="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                          <strong>Key difference from no-cache:</strong> User
+                          doesn't wait for revalidation (prioritizes speed over
+                          freshness)
                         </p>
                       </div>
                     </>
